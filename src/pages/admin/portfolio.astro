@@ -1,0 +1,342 @@
+---
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import { loadAdmin } from "../../lib/adminAuth";
+import {
+  listPortfolioPrograms,
+  listPortfolioStats,
+} from "../../lib/db";
+import { toneClasses } from "../../lib/portfolioStyles";
+
+const env = Astro.locals.runtime.env;
+const me = await loadAdmin(
+  env.DB,
+  env.SESSIONS,
+  Astro.request.headers.get("cookie"),
+);
+if (!me) return Astro.redirect("/profile/login?next=/admin/portfolio");
+
+const [programs, stats] = await Promise.all([
+  listPortfolioPrograms(env.DB),
+  listPortfolioStats(env.DB),
+]);
+
+const TONES = ["orange", "purple", "rose", "emerald", "blue", "amber"] as const;
+---
+
+<AdminLayout title="Хийгдсэн ажлууд" active="portfolio">
+  <header class="lg:hidden px-3 pt-6 pb-3 flex items-center bg-white border-b border-gray-100 sticky top-0 z-20">
+    <a href="/admin" aria-label="Буцах" class="p-2">
+      <svg
+        class="h-6 w-6 text-mwa-text-primary"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          d="M15 19l-7-7 7-7"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"></path>
+      </svg>
+    </a>
+    <h1 class="flex-1 text-center text-lg font-bold">Хийгдсэн ажлууд</h1>
+    <a
+      href="/portfolio"
+      class="text-xs text-mwa-burgundy font-bold p-2"
+      title="Урьдчилан харах"
+    >
+      Харах
+    </a>
+  </header>
+
+  <div class="max-w-6xl mx-auto lg:px-8 lg:py-8">
+    <div class="hidden lg:flex items-center justify-between mb-6">
+      <h1 class="text-2xl font-extrabold">Хийгдсэн ажлууд</h1>
+      <a
+        href="/portfolio"
+        class="text-sm text-mwa-burgundy font-bold hover:underline"
+      >
+        Урьдчилан харах →
+      </a>
+    </div>
+
+    <div class="lg:grid lg:grid-cols-2 lg:gap-6">
+
+  <section class="px-5 lg:px-0 mb-6" data-purpose="programs">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="font-bold text-base">Гол хөтөлбөрүүд</h2>
+      <span class="text-xs text-gray-400">{programs.length} ширхэг</span>
+    </div>
+
+    <div class="space-y-2 mb-3">
+      {
+        programs.length === 0 && (
+          <div class="text-center py-6 text-gray-400 text-sm bg-gray-50 rounded-2xl">
+            Хоосон байна. Доороос анхны хөтөлбөрөө нэмнэ үү.
+          </div>
+        )
+      }
+      {
+        programs.map((p) => {
+          const tc = toneClasses(p.tone);
+          return (
+            <article class="bg-white border border-gray-100 rounded-2xl p-3 flex items-start gap-3">
+              <div
+                class={`w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0 ${tc.icon}`}
+              >
+                {p.icon}
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 flex-wrap mb-0.5">
+                  <h3 class="font-bold text-sm">{p.title}</h3>
+                  {p.since_label && (
+                    <span class="text-[10px] text-gray-400">· {p.since_label}</span>
+                  )}
+                </div>
+                <p class="text-xs text-mwa-text-secondary leading-relaxed line-clamp-2">
+                  {p.description}
+                </p>
+              </div>
+              <div class="text-[10px] text-gray-400 font-mono shrink-0">#{p.sort_order}</div>
+            </article>
+          );
+        })
+      }
+    </div>
+
+    <details class="bg-mwa-burgundy/5 border border-mwa-burgundy/20 rounded-2xl">
+      <summary
+        class="cursor-pointer px-4 py-3 text-sm font-bold text-mwa-burgundy flex items-center gap-2 select-none"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path d="M12 4v16m8-8H4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"/>
+        </svg>
+        Хөтөлбөр нэмэх
+      </summary>
+      <form
+        class="px-4 pb-4 space-y-3"
+        onsubmit="return false"
+        data-form="program"
+      >
+        <div class="grid grid-cols-[auto_1fr] gap-2">
+          <input
+            name="icon"
+            type="text"
+            value="✨"
+            maxlength="4"
+            placeholder="✨"
+            class="w-14 text-center bg-white border border-gray-200 rounded-xl px-2 py-3 text-lg focus:outline-none focus:border-mwa-burgundy"
+          />
+          <input
+            name="title"
+            type="text"
+            required
+            placeholder="Хөтөлбөрийн нэр"
+            class="bg-white border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:border-mwa-burgundy"
+          />
+        </div>
+        <textarea
+          name="description"
+          required
+          rows="3"
+          placeholder="Хөтөлбөрийн тайлбар"
+          class="w-full bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-mwa-burgundy resize-y"
+        ></textarea>
+        <div class="grid grid-cols-2 gap-2">
+          <input
+            name="since_label"
+            type="text"
+            placeholder="2024 оноос (заавал биш)"
+            class="bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-mwa-burgundy"
+          />
+          <input
+            name="sort_order"
+            type="number"
+            value="100"
+            min="0"
+            placeholder="Эрэмбэ"
+            class="bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-mwa-burgundy"
+          />
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-xs text-mwa-text-secondary">Өнгө:</span>
+          {
+            TONES.map((t, i) => (
+              <label class="cursor-pointer">
+                <input
+                  type="radio"
+                  name="tone"
+                  value={t}
+                  checked={i === 1}
+                  class="peer hidden"
+                />
+                <span
+                  class={`block w-6 h-6 rounded-full bg-${t}-500 border-2 border-transparent peer-checked:border-mwa-text-primary peer-checked:scale-110 transition-transform`}
+                  style={`background-color: var(--tw-${t})`}
+                >
+                  <span class={`block w-full h-full rounded-full ${toneClasses(t).icon.split(" ")[0]}`} />
+                </span>
+              </label>
+            ))
+          }
+        </div>
+        <button
+          type="submit"
+          class="w-full bg-mwa-burgundy text-white font-bold py-3 rounded-xl text-sm active:opacity-80"
+        >
+          Хөтөлбөр нэмэх
+        </button>
+        <p data-error class="text-xs text-rose-500 text-center hidden"></p>
+      </form>
+    </details>
+  </section>
+
+  <section class="px-5 lg:px-0 mb-10" data-purpose="stats">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="font-bold text-base">Статистик</h2>
+      <span class="text-xs text-gray-400">{stats.length} ширхэг</span>
+    </div>
+
+    <div class="grid grid-cols-2 gap-2 mb-3">
+      {
+        stats.length === 0 && (
+          <div class="col-span-2 text-center py-6 text-gray-400 text-sm bg-gray-50 rounded-2xl">
+            Статистик хоосон.
+          </div>
+        )
+      }
+      {
+        stats.map((s) => {
+          const tc = toneClasses(s.tone);
+          return (
+            <div class={`rounded-xl p-3 text-center ${tc.stat}`}>
+              <div class="text-xl font-extrabold">{s.value}</div>
+              <div class="text-[10px] text-mwa-text-secondary mt-0.5">
+                {s.label}
+              </div>
+              <div class="text-[9px] text-gray-400 font-mono mt-1">
+                #{s.sort_order}
+              </div>
+            </div>
+          );
+        })
+      }
+    </div>
+
+    <details class="bg-mwa-burgundy/5 border border-mwa-burgundy/20 rounded-2xl">
+      <summary
+        class="cursor-pointer px-4 py-3 text-sm font-bold text-mwa-burgundy flex items-center gap-2 select-none"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path d="M12 4v16m8-8H4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"/>
+        </svg>
+        Статистик нэмэх
+      </summary>
+      <form
+        class="px-4 pb-4 space-y-3"
+        onsubmit="return false"
+        data-form="stat"
+      >
+        <div class="grid grid-cols-2 gap-2">
+          <input
+            name="value"
+            type="text"
+            required
+            placeholder="1,500+"
+            class="bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-mwa-burgundy"
+          />
+          <input
+            name="label"
+            type="text"
+            required
+            placeholder="Гишүүн"
+            class="bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-mwa-burgundy"
+          />
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <select
+            name="tone"
+            class="bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-mwa-burgundy"
+          >
+            {TONES.map((t) => <option value={t}>{t}</option>)}
+          </select>
+          <input
+            name="sort_order"
+            type="number"
+            value="100"
+            min="0"
+            placeholder="Эрэмбэ"
+            class="bg-white border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-mwa-burgundy"
+          />
+        </div>
+        <button
+          type="submit"
+          class="w-full bg-mwa-burgundy text-white font-bold py-3 rounded-xl text-sm active:opacity-80"
+        >
+          Статистик нэмэх
+        </button>
+        <p data-error class="text-xs text-rose-500 text-center hidden"></p>
+      </form>
+    </details>
+  </section>
+    </div>
+  </div>
+</AdminLayout>
+
+<script>
+  interface ApiResponse {
+    ok?: boolean;
+    id?: number;
+    error?: string;
+  }
+
+  const endpoints: Record<string, string> = {
+    program: "/api/portfolio/programs",
+    stat: "/api/portfolio/stats",
+  };
+
+  document.querySelectorAll<HTMLFormElement>("[data-form]").forEach((form) => {
+    const kind = form.dataset.form ?? "";
+    const url = endpoints[kind];
+    if (!url) return;
+    const errorEl = form.querySelector<HTMLElement>("[data-error]");
+    const submitBtn = form.querySelector<HTMLButtonElement>("button[type='submit']");
+
+    form.addEventListener("submit", async () => {
+      if (!errorEl || !submitBtn) return;
+      errorEl.classList.add("hidden");
+      submitBtn.disabled = true;
+
+      const data = new FormData(form);
+      const payload: Record<string, unknown> = {};
+      for (const [k, v] of data.entries()) {
+        if (typeof v !== "string") continue;
+        const trimmed = v.trim();
+        if (trimmed === "") continue;
+        if (k === "sort_order") payload[k] = Number(trimmed);
+        else payload[k] = trimmed;
+      }
+
+      try {
+        const res = await fetch(url, {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        const body = (await res.json().catch(() => ({}))) as ApiResponse;
+        if (res.ok && body.ok) {
+          window.location.reload();
+        } else {
+          errorEl.textContent = body.error ?? "Алдаа гарлаа";
+          errorEl.classList.remove("hidden");
+          submitBtn.disabled = false;
+        }
+      } catch {
+        errorEl.textContent = "Сүлжээний алдаа";
+        errorEl.classList.remove("hidden");
+        submitBtn.disabled = false;
+      }
+    });
+  });
+</script>

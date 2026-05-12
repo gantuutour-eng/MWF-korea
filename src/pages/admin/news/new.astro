@@ -1,0 +1,228 @@
+---
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+import { loadAdmin } from "../../../lib/adminAuth";
+
+const env = Astro.locals.runtime.env;
+const me = await loadAdmin(
+  env.DB,
+  env.SESSIONS,
+  Astro.request.headers.get("cookie"),
+);
+if (!me) return Astro.redirect("/profile/login?next=/admin/news/new");
+---
+
+<AdminLayout title="Шинэ мэдээ нэмэх" active="news">
+  <header class="lg:hidden px-3 pt-6 pb-3 flex items-center bg-white border-b border-gray-100 sticky top-0 z-20">
+    <a href="/admin" aria-label="Буцах" class="p-2">
+      <svg
+        class="h-6 w-6 text-mwa-text-primary"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          d="M15 19l-7-7 7-7"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"></path>
+      </svg>
+    </a>
+    <h1 class="flex-1 text-center text-lg font-bold">Шинэ мэдээ нэмэх</h1>
+    <div class="w-10"></div>
+  </header>
+
+  <div class="max-w-2xl mx-auto lg:px-8 lg:py-8">
+    <div class="hidden lg:flex items-center gap-3 mb-6">
+      <a href="/admin" class="text-sm text-mwa-burgundy font-bold">← Буцах</a>
+      <h1 class="text-2xl font-extrabold">Шинэ мэдээ нэмэх</h1>
+    </div>
+
+    <form
+      id="news-form"
+      class="px-5 lg:px-0 pb-10 space-y-4"
+      onsubmit="return false"
+    >
+    <div>
+      <label class="text-xs font-bold text-mwa-text-secondary mb-1.5 block">
+        Гарчиг <span class="text-rose-500">*</span>
+      </label>
+      <input
+        name="title"
+        type="text"
+        required
+        maxlength="200"
+        placeholder="Жнь: Шинэ хөтөлбөр эхэллээ"
+        class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-mwa-burgundy"
+      />
+    </div>
+
+    <div>
+      <label class="text-xs font-bold text-mwa-text-secondary mb-1.5 block">
+        Дэд гарчиг
+      </label>
+      <input
+        name="subtitle"
+        type="text"
+        maxlength="300"
+        placeholder="Зургийн доор гарах нэг мөрийн тайлбар"
+        class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-mwa-burgundy"
+      />
+    </div>
+
+    <div>
+      <label class="text-xs font-bold text-mwa-text-secondary mb-1.5 block">
+        Ангилал <span class="text-rose-500">*</span>
+      </label>
+      <div class="flex gap-2">
+        <label class="flex-1">
+          <input
+            type="radio"
+            name="category"
+            value="notice"
+            checked
+            class="peer hidden"
+          />
+          <div class="text-center text-sm font-semibold py-3 rounded-xl border border-gray-200 peer-checked:bg-mwa-burgundy peer-checked:text-white peer-checked:border-mwa-burgundy cursor-pointer">
+            Мэдэгдэл
+          </div>
+        </label>
+        <label class="flex-1">
+          <input
+            type="radio"
+            name="category"
+            value="article"
+            class="peer hidden"
+          />
+          <div class="text-center text-sm font-semibold py-3 rounded-xl border border-gray-200 peer-checked:bg-mwa-burgundy peer-checked:text-white peer-checked:border-mwa-burgundy cursor-pointer">
+            Нийтлэл
+          </div>
+        </label>
+      </div>
+    </div>
+
+    <div>
+      <label class="text-xs font-bold text-mwa-text-secondary mb-1.5 block">
+        Үндсэн зураг URL
+      </label>
+      <input
+        name="cover_url"
+        type="text"
+        placeholder="/images/news/cover-xxx.svg эсвэл https://..."
+        class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-mwa-burgundy font-mono"
+      />
+      <div class="text-[10px] text-gray-400 mt-1">
+        Хүйц 16:9 буюу 600×340 хэмжээ зөвлөмжтэй
+      </div>
+    </div>
+
+    <div>
+      <label class="text-xs font-bold text-mwa-text-secondary mb-1.5 block">
+        Жижиг зураг URL (жагсаалт дахь thumbnail)
+      </label>
+      <input
+        name="image_url"
+        type="text"
+        placeholder="Цэвэр квадрат хэлбэртэй жижиг зураг"
+        class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-mwa-burgundy font-mono"
+      />
+    </div>
+
+    <div>
+      <label class="text-xs font-bold text-mwa-text-secondary mb-1.5 block">
+        Агуулга <span class="text-rose-500">*</span>
+      </label>
+      <textarea
+        name="body"
+        required
+        rows="10"
+        placeholder="Мэдээний дэлгэрэнгүй агуулга. Хоосон мөрөөр догол мөр тусгаарлаж, ☆ 📌 💬 зэрэг тэмдэгт ашиглаж болно."
+        class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm leading-relaxed focus:outline-none focus:border-mwa-burgundy resize-y"
+      ></textarea>
+    </div>
+
+    <p
+      id="news-error"
+      class="text-sm text-rose-500 text-center hidden"
+    >
+    </p>
+    <p
+      id="news-success"
+      class="text-sm text-emerald-600 text-center hidden"
+    >
+    </p>
+
+    <div class="flex gap-2 pt-2">
+      <a
+        href="/admin"
+        class="flex-1 text-center bg-white border border-gray-200 text-mwa-text-primary font-bold rounded-xl py-3 text-sm active:bg-gray-50"
+      >
+        Цуцлах
+      </a>
+      <button
+        type="submit"
+        class="flex-1 bg-mwa-burgundy text-white font-bold rounded-xl py-3 text-sm active:opacity-80 disabled:opacity-50"
+      >
+        Нийтлэх
+      </button>
+    </div>
+    </form>
+  </div>
+</AdminLayout>
+
+<script>
+  interface ApiResponse {
+    ok?: boolean;
+    id?: number;
+    error?: string;
+  }
+
+  const form = document.getElementById("news-form") as HTMLFormElement | null;
+  const errorEl = document.getElementById("news-error");
+  const successEl = document.getElementById("news-success");
+
+  form?.addEventListener("submit", async () => {
+    if (!form || !errorEl || !successEl) return;
+    errorEl.classList.add("hidden");
+    successEl.classList.add("hidden");
+
+    const submitBtn = form.querySelector<HTMLButtonElement>(
+      'button[type="submit"]',
+    );
+    if (submitBtn) submitBtn.disabled = true;
+
+    const data = new FormData(form);
+    const payload = {
+      title: String(data.get("title") ?? "").trim(),
+      subtitle: String(data.get("subtitle") ?? "").trim() || undefined,
+      body: String(data.get("body") ?? "").trim(),
+      category: String(data.get("category") ?? "notice"),
+      cover_url: String(data.get("cover_url") ?? "").trim() || undefined,
+      image_url: String(data.get("image_url") ?? "").trim() || undefined,
+    };
+
+    try {
+      const res = await fetch("/api/news", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const body = (await res.json().catch(() => ({}))) as ApiResponse;
+      if (res.ok && body.ok && body.id !== undefined) {
+        successEl.textContent = `Амжилттай нийтэллээ (id: ${body.id})`;
+        successEl.classList.remove("hidden");
+        window.setTimeout(() => {
+          window.location.href = `/news/${body.id}`;
+        }, 800);
+      } else {
+        errorEl.textContent = body.error ?? "Алдаа гарлаа";
+        errorEl.classList.remove("hidden");
+        if (submitBtn) submitBtn.disabled = false;
+      }
+    } catch {
+      errorEl.textContent = "Сүлжээний алдаа";
+      errorEl.classList.remove("hidden");
+      if (submitBtn) submitBtn.disabled = false;
+    }
+  });
+</script>

@@ -1,0 +1,224 @@
+---
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+import { loadAdmin } from "../../../lib/adminAuth";
+import { EVENT_TYPES, type EventType } from "../../../lib/db";
+import { styleFor } from "../../../lib/eventStyles";
+
+const env = Astro.locals.runtime.env;
+const me = await loadAdmin(env.DB, env.SESSIONS, Astro.request.headers.get("cookie"));
+if (!me) return Astro.redirect("/profile/login?next=/admin/events/new");
+
+const types: { value: EventType; label: string }[] = EVENT_TYPES.map((t) => ({
+  value: t,
+  label: styleFor(t).label,
+}));
+---
+
+<AdminLayout title="Шинэ арга хэмжээ" active="events">
+  <header class="lg:hidden px-3 pt-6 pb-3 flex items-center bg-white border-b border-gray-100 sticky top-0 z-20">
+    <a href="/admin/events" aria-label="Буцах" class="p-2">
+      <svg
+        class="h-6 w-6 text-mwa-text-primary"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          d="M15 19l-7-7 7-7"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"></path>
+      </svg>
+    </a>
+    <h1 class="flex-1 text-center text-lg font-bold">Шинэ арга хэмжээ</h1>
+    <div class="w-10"></div>
+  </header>
+
+  <div class="max-w-2xl mx-auto lg:px-8 lg:py-8">
+    <div class="hidden lg:flex items-center gap-3 mb-6">
+      <a
+        href="/admin/events"
+        class="text-sm text-mwa-burgundy font-bold"
+      >
+        ← Буцах
+      </a>
+      <h1 class="text-2xl font-extrabold">Шинэ арга хэмжээ</h1>
+    </div>
+
+    <form id="event-form" class="px-5 lg:px-0 pb-10 space-y-4" onsubmit="return false">
+    <div>
+      <label class="text-xs font-bold text-mwa-text-secondary mb-1.5 block">
+        Төрөл <span class="text-rose-500">*</span>
+      </label>
+      <select
+        name="type"
+        required
+        class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-mwa-burgundy"
+      >
+        {types.map((t) => <option value={t.value}>{t.label}</option>)}
+      </select>
+    </div>
+
+    <div>
+      <label class="text-xs font-bold text-mwa-text-secondary mb-1.5 block">
+        Гарчиг <span class="text-rose-500">*</span>
+      </label>
+      <input
+        name="title"
+        type="text"
+        required
+        maxlength="200"
+        placeholder="Жнь: Эрх зүйн зөвлөгөөний өдөрлөг"
+        class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-mwa-burgundy"
+      />
+    </div>
+
+    <div class="grid grid-cols-2 gap-2">
+      <div>
+        <label class="text-xs font-bold text-mwa-text-secondary mb-1.5 block">
+          Эхлэх <span class="text-rose-500">*</span>
+        </label>
+        <input
+          name="start_at"
+          type="datetime-local"
+          required
+          class="w-full bg-white border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:border-mwa-burgundy"
+        />
+      </div>
+      <div>
+        <label class="text-xs font-bold text-mwa-text-secondary mb-1.5 block">
+          Дуусах
+        </label>
+        <input
+          name="end_at"
+          type="datetime-local"
+          class="w-full bg-white border border-gray-200 rounded-xl px-3 py-3 text-sm focus:outline-none focus:border-mwa-burgundy"
+        />
+      </div>
+    </div>
+
+    <div>
+      <label class="text-xs font-bold text-mwa-text-secondary mb-1.5 block">
+        Байршил
+      </label>
+      <input
+        name="location"
+        type="text"
+        maxlength="200"
+        placeholder="Жнь: Сөүл, MWA салбарын байр"
+        class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-mwa-burgundy"
+      />
+    </div>
+
+    <div>
+      <label class="text-xs font-bold text-mwa-text-secondary mb-1.5 block">
+        Зурагны URL
+      </label>
+      <input
+        name="image_url"
+        type="text"
+        placeholder="/images/events/event-xxx.svg эсвэл https://..."
+        class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-mwa-burgundy font-mono"
+      />
+    </div>
+
+    <div>
+      <label class="text-xs font-bold text-mwa-text-secondary mb-1.5 block">
+        Тайлбар
+      </label>
+      <textarea
+        name="description"
+        rows="6"
+        placeholder="Арга хэмжээний дэлгэрэнгүй тайлбар"
+        class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm leading-relaxed focus:outline-none focus:border-mwa-burgundy resize-y"
+      ></textarea>
+    </div>
+
+    <p id="event-error" class="text-sm text-rose-500 text-center hidden"></p>
+    <p id="event-success" class="text-sm text-emerald-600 text-center hidden"></p>
+
+    <div class="flex gap-2 pt-2">
+      <a
+        href="/admin/events"
+        class="flex-1 text-center bg-white border border-gray-200 text-mwa-text-primary font-bold rounded-xl py-3 text-sm active:bg-gray-50"
+      >
+        Цуцлах
+      </a>
+      <button
+        type="submit"
+        class="flex-1 bg-mwa-burgundy text-white font-bold rounded-xl py-3 text-sm active:opacity-80 disabled:opacity-50"
+      >
+        Нэмэх
+      </button>
+    </div>
+    </form>
+  </div>
+</AdminLayout>
+
+<script>
+  interface ApiResponse {
+    ok?: boolean;
+    id?: number;
+    error?: string;
+  }
+
+  const form = document.getElementById("event-form") as HTMLFormElement | null;
+  const errorEl = document.getElementById("event-error");
+  const successEl = document.getElementById("event-success");
+
+  function toUnix(value: string): number | undefined {
+    if (!value) return undefined;
+    const ms = new Date(value).getTime();
+    if (!Number.isFinite(ms)) return undefined;
+    return Math.floor(ms / 1000);
+  }
+
+  form?.addEventListener("submit", async () => {
+    if (!form || !errorEl || !successEl) return;
+    errorEl.classList.add("hidden");
+    successEl.classList.add("hidden");
+
+    const submitBtn = form.querySelector<HTMLButtonElement>(
+      'button[type="submit"]',
+    );
+    if (submitBtn) submitBtn.disabled = true;
+
+    const data = new FormData(form);
+    const startAt = toUnix(String(data.get("start_at") ?? ""));
+    const endAtRaw = String(data.get("end_at") ?? "");
+    const payload: Record<string, unknown> = {
+      type: String(data.get("type") ?? ""),
+      title: String(data.get("title") ?? "").trim(),
+      description: String(data.get("description") ?? "").trim() || undefined,
+      location: String(data.get("location") ?? "").trim() || undefined,
+      image_url: String(data.get("image_url") ?? "").trim() || undefined,
+      start_at: startAt,
+    };
+    if (endAtRaw) payload.end_at = toUnix(endAtRaw);
+
+    try {
+      const res = await fetch("/api/events", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const body = (await res.json().catch(() => ({}))) as ApiResponse;
+      if (res.ok && body.ok) {
+        successEl.textContent = `Амжилттай нэмэгдлээ (id: ${body.id})`;
+        successEl.classList.remove("hidden");
+        window.setTimeout(() => {
+          window.location.href = "/admin/events";
+        }, 800);
+      } else {
+        errorEl.textContent = body.error ?? "Алдаа гарлаа";
+        errorEl.classList.remove("hidden");
+        if (submitBtn) submitBtn.disabled = false;
+      }
+    } catch {
+      errorEl.textContent = "Сүлжээний алдаа";
+      errorEl.classList.remove("hidden");
+      if (submitBtn) submitBtn.disabled = false;
+    }
+  });
+</script>

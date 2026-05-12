@@ -1,0 +1,308 @@
+---
+import AppLayout from "../../layouts/AppLayout.astro";
+import { listEvents } from "../../lib/db";
+import { styleFor, formatDate, formatTime } from "../../lib/eventStyles";
+
+type When = "all" | "upcoming" | "past";
+const whenParam = Astro.url.searchParams.get("when");
+const activeWhen: When =
+  whenParam === "upcoming" || whenParam === "past" ? whenParam : "all";
+
+const rows = await listEvents(Astro.locals.runtime.env.DB, {
+  when: activeWhen === "all" ? "upcoming" : activeWhen,
+});
+
+const featured = rows.slice(0, 3);
+const others = rows.slice(3);
+
+const tabs: { key: When; label: string }[] = [
+  { key: "all", label: "Бүгд" },
+  { key: "upcoming", label: "Удахгүй болох" },
+  { key: "past", label: "Өнгөрсөн" },
+];
+
+// Calendar week strip (current week, Monday → Sunday)
+const today = new Date();
+const dow = (today.getDay() + 6) % 7; // 0=Mon..6=Sun
+const weekStart = new Date(today);
+weekStart.setDate(today.getDate() - dow);
+weekStart.setHours(0, 0, 0, 0);
+const weekDays: { label: string; day: number; isToday: boolean; isSunday: boolean }[] = [];
+const weekdayLabels = ["Да", "Мя", "Лх", "Пү", "Ба", "Бя", "Ня"];
+for (let i = 0; i < 7; i++) {
+  const d = new Date(weekStart);
+  d.setDate(weekStart.getDate() + i);
+  weekDays.push({
+    label: weekdayLabels[i]!,
+    day: d.getDate(),
+    isToday: d.toDateString() === today.toDateString(),
+    isSunday: i === 6,
+  });
+}
+const monthLabel = `${today.getFullYear()} оны ${today.getMonth() + 1}-р сар`;
+---
+
+<AppLayout title="Үйл ажиллагаа" activeTab="events" showHeader={false}>
+  <header
+    class="px-3 pt-6 pb-3 flex items-center"
+    data-purpose="events-header"
+  >
+    <a href="/" aria-label="Буцах" class="p-2">
+      <svg
+        class="h-6 w-6 text-mwa-text-primary"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          d="M15 19l-7-7 7-7"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"></path>
+      </svg>
+    </a>
+    <h1 class="flex-1 text-center text-lg font-bold">Үйл ажиллагаа</h1>
+    <button aria-label="Хайх" class="p-2">
+      <svg
+        class="h-6 w-6 text-mwa-text-primary"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <circle
+          cx="11"
+          cy="11"
+          r="7"
+          stroke-width="2"
+          stroke-linecap="round"></circle>
+        <path
+          d="M21 21l-4.35-4.35"
+          stroke-width="2"
+          stroke-linecap="round"></path>
+      </svg>
+    </button>
+    <button aria-label="Шүүлт" class="p-2">
+      <svg
+        class="h-6 w-6 text-mwa-text-primary"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          d="M4 6h16M7 12h10M10 18h4"
+          stroke-width="2"
+          stroke-linecap="round"></path>
+      </svg>
+    </button>
+  </header>
+
+  <nav
+    class="px-5 border-b border-gray-100 flex items-center gap-2"
+    data-purpose="events-tabs"
+  >
+    {
+      tabs.map((tab) => {
+        const active = tab.key === activeWhen;
+        const href =
+          tab.key === "all" ? "/events" : `/events?when=${tab.key}`;
+        return (
+          <a
+            href={href}
+            class={`flex-1 text-center py-3 text-sm font-semibold relative ${
+              active ? "text-mwa-burgundy" : "text-gray-400"
+            }`}
+          >
+            {tab.label}
+            {active && (
+              <span class="absolute bottom-0 left-1/4 right-1/4 h-[3px] bg-mwa-burgundy rounded-t-full" />
+            )}
+          </a>
+        );
+      })
+    }
+  </nav>
+
+  <section
+    class="px-5 pt-4 pb-2"
+    data-purpose="week-calendar"
+  >
+    <div class="flex items-center justify-between mb-3">
+      <button aria-label="Өмнөх сар" class="p-1 text-gray-400">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path d="M15 19l-7-7 7-7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+        </svg>
+      </button>
+      <span class="text-sm font-semibold">{monthLabel} ▾</span>
+      <button aria-label="Дараах сар" class="p-1 text-gray-400">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path d="M9 5l7 7-7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+        </svg>
+      </button>
+    </div>
+    <div class="grid grid-cols-7 text-center text-[11px] text-gray-400 mb-2">
+      {weekdayLabels.map((l, i) => (
+        <div class={i === 6 ? "text-rose-500" : ""}>{l}</div>
+      ))}
+    </div>
+    <div class="grid grid-cols-7 text-center">
+      {
+        weekDays.map((d) => (
+          <div class="py-1">
+            {d.isToday ? (
+              <span class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-mwa-burgundy text-white text-sm font-bold">
+                {d.day}
+              </span>
+            ) : (
+              <span
+                class={`inline-flex items-center justify-center w-9 h-9 text-sm ${
+                  d.isSunday ? "text-rose-500" : "text-mwa-text-primary"
+                }`}
+              >
+                {d.day}
+              </span>
+            )}
+          </div>
+        ))
+      }
+    </div>
+  </section>
+
+  {
+    featured.length > 0 && (
+      <section class="px-5 mt-4" data-purpose="featured-events">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="font-bold text-base">Удахгүй болох үйл ажиллагаа</h2>
+          <a
+            href="/events?when=upcoming"
+            class="text-xs text-gray-400 font-medium"
+          >
+            Бүгдийг харах →
+          </a>
+        </div>
+
+        <div class="space-y-3">
+          {featured.map((row) => {
+            const s = styleFor(row.type);
+            return (
+              <a
+                href={`/events/${row.id}`}
+                class="flex bg-white rounded-2xl overflow-hidden shadow-sm border border-gray-100"
+              >
+                <div
+                  class={`w-[120px] shrink-0 p-3 bg-gradient-to-br ${s.featuredBg} text-white flex flex-col`}
+                >
+                  <span class="inline-block self-start text-[10px] font-bold bg-white/20 backdrop-blur rounded px-2 py-0.5">
+                    {s.label}
+                  </span>
+                  <div class="flex-1 my-2 font-extrabold text-[13px] leading-tight line-clamp-3">
+                    {row.title}
+                  </div>
+                  <div class={`text-[10px] pt-2 border-t ${s.accent}`}>
+                    <div class="opacity-90">{formatDate(row.start_at)}</div>
+                    <div class="font-bold">{formatTime(row.start_at)}</div>
+                  </div>
+                </div>
+                <div class="flex-1 p-3 min-w-0">
+                  <h3 class="font-bold text-sm leading-snug line-clamp-2 mb-1.5">
+                    {row.title}
+                  </h3>
+                  {row.location && (
+                    <p class="text-[11px] text-gray-500 leading-snug flex items-start gap-1 mb-1.5 line-clamp-2">
+                      <span aria-hidden="true">📍</span>
+                      <span class="flex-1">{row.location}</span>
+                    </p>
+                  )}
+                  {row.description && (
+                    <p class="text-[11px] text-gray-600 line-clamp-2 leading-snug mb-2">
+                      {row.description}
+                    </p>
+                  )}
+                  <div class="flex gap-1.5">
+                    <span class="text-[10px] font-bold border border-mwa-burgundy text-mwa-burgundy px-2 py-1 rounded-md">
+                      Бүртгүүлсэн
+                    </span>
+                    <span class="text-[10px] font-bold border border-gray-300 text-gray-500 px-2 py-1 rounded-md">
+                      Дэлгэрэнгүй
+                    </span>
+                  </div>
+                </div>
+              </a>
+            );
+          })}
+        </div>
+      </section>
+    )
+  }
+
+  {
+    others.length > 0 && (
+      <section class="px-5 mt-8" data-purpose="other-events">
+        <h2 class="font-bold text-base mb-3">Бусад үйл ажиллагаа</h2>
+        <div class="divide-y divide-gray-100">
+          {others.map((row) => {
+            const s = styleFor(row.type);
+            return (
+              <a
+                href={`/events/${row.id}`}
+                class="flex items-center gap-3 py-3"
+              >
+                <div class="w-16 h-16 shrink-0 rounded-xl overflow-hidden bg-gray-100">
+                  {row.image_url ? (
+                    <img
+                      src={row.image_url}
+                      alt=""
+                      loading="lazy"
+                      class="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div class="w-full h-full bg-mwa-burgundy/10 flex items-center justify-center text-mwa-burgundy/40 text-[10px]">
+                      MWA
+                    </div>
+                  )}
+                </div>
+                <div class="flex-1 min-w-0">
+                  <span
+                    class={`inline-block text-[10px] font-bold px-1.5 py-0.5 rounded ${s.chip}`}
+                  >
+                    {s.label}
+                  </span>
+                  <h3 class="font-semibold text-sm leading-tight mt-1 line-clamp-1">
+                    {row.title}
+                  </h3>
+                  <div class="text-[11px] text-gray-500 mt-0.5 flex items-center gap-2">
+                    <span>📅 {formatDate(row.start_at)}</span>
+                    <span>🕐 {formatTime(row.start_at)}</span>
+                    {row.location && (
+                      <span class="truncate">📍 {row.location}</span>
+                    )}
+                  </div>
+                </div>
+                <svg
+                  class="w-4 h-4 text-gray-300 shrink-0"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    d="M9 5l7 7-7 7"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  ></path>
+                </svg>
+              </a>
+            );
+          })}
+        </div>
+      </section>
+    )
+  }
+
+  {
+    rows.length === 0 && (
+      <div class="text-center py-12 text-gray-400 text-sm">
+        Одоогоор арга хэмжээ алга байна.
+      </div>
+    )
+  }
+</AppLayout>

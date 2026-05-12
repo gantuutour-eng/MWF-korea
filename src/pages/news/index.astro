@@ -1,0 +1,124 @@
+---
+import AppLayout from "../../layouts/AppLayout.astro";
+import { listNews, type NewsCategory } from "../../lib/db";
+
+const allowed: NewsCategory[] = ["notice", "article"];
+const categoryParam = Astro.url.searchParams.get("cat");
+const activeCategory: NewsCategory | "all" = allowed.includes(
+  categoryParam as NewsCategory,
+)
+  ? (categoryParam as NewsCategory)
+  : "all";
+
+const rows = await listNews(Astro.locals.runtime.env.DB, {
+  limit: 50,
+  category: activeCategory === "all" ? undefined : activeCategory,
+});
+
+function fmtDate(unix: number): string {
+  const d = new Date(unix * 1000);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}.${m}.${day}`;
+}
+
+const tabs: { key: NewsCategory | "all"; label: string; href: string }[] = [
+  { key: "all", label: "Бүх мэдээ", href: "/news" },
+  { key: "notice", label: "Мэдэгдэл", href: "/news?cat=notice" },
+  { key: "article", label: "Нийтлэл", href: "/news?cat=article" },
+];
+---
+
+<AppLayout
+  title="Мэдээ мэдээлэл"
+  activeTab="news"
+  showHeader={false}
+>
+  <header
+    class="px-5 pt-6 pb-4 flex items-center justify-center relative"
+    data-purpose="news-header"
+  >
+    <a
+      href="/"
+      aria-label="Буцах"
+      class="absolute left-3 p-2"
+    >
+      <svg
+        class="h-6 w-6 text-mwa-text-primary"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          d="M15 19l-7-7 7-7"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"></path>
+      </svg>
+    </a>
+    <h1 class="text-lg font-bold">Мэдээ мэдээлэл</h1>
+  </header>
+
+  <nav
+    class="px-5 border-b border-gray-100 flex items-center gap-2"
+    data-purpose="news-tabs"
+  >
+    {
+      tabs.map((tab) => {
+        const active = tab.key === activeCategory;
+        return (
+          <a
+            href={tab.href}
+            class={`flex-1 text-center py-3 text-sm font-semibold relative ${
+              active
+                ? "text-mwa-burgundy"
+                : "text-gray-400"
+            }`}
+          >
+            {tab.label}
+            {active && (
+              <span class="absolute bottom-0 left-1/4 right-1/4 h-[3px] bg-mwa-burgundy rounded-t-full" />
+            )}
+          </a>
+        );
+      })
+    }
+  </nav>
+
+  <section class="px-5 pt-4 space-y-5" data-purpose="news-list">
+    {
+      rows.length === 0 && (
+        <div class="text-center py-12 text-gray-400 text-sm">
+          Одоогоор мэдээ алга байна.
+        </div>
+      )
+    }
+    {
+      rows.map((row) => (
+        <a href={`/news/${row.id}`} class="flex items-start gap-4 group">
+          <div class="shrink-0 w-24 h-24 rounded-2xl overflow-hidden bg-gray-100">
+            {row.image_url ? (
+              <img
+                src={row.image_url}
+                alt=""
+                loading="lazy"
+                class="w-full h-full object-cover"
+              />
+            ) : (
+              <div class="w-full h-full bg-mwa-burgundy/10 flex items-center justify-center text-mwa-burgundy/40 text-xs">
+                MWA
+              </div>
+            )}
+          </div>
+          <div class="flex-1 min-w-0 pt-1">
+            <h2 class="font-bold text-[15px] leading-snug text-mwa-text-primary line-clamp-2 mb-2 group-active:opacity-70">
+              {row.title}
+            </h2>
+            <div class="text-xs text-gray-400">{fmtDate(row.published_at)}</div>
+          </div>
+        </a>
+      ))
+    }
+  </section>
+</AppLayout>

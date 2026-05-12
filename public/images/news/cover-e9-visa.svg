@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 340" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="ebg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fef3c7"/>
+      <stop offset="1" stop-color="#fde68a"/>
+    </linearGradient>
+  </defs>
+  <rect width="600" height="340" fill="url(#ebg)"/>
+  <!-- Worker silhouette -->
+  <g transform="translate(180 60)">
+    <!-- Helmet -->
+    <ellipse cx="120" cy="60" rx="60" ry="48" fill="#facc15"/>
+    <ellipse cx="120" cy="68" rx="60" ry="40" fill="#eab308"/>
+    <rect x="60" y="58" width="120" height="14" fill="#eab308"/>
+    <circle cx="120" cy="58" r="6" fill="#1e3a8a"/>
+    <!-- Face -->
+    <ellipse cx="120" cy="120" rx="48" ry="56" fill="#a16207"/>
+    <ellipse cx="120" cy="125" rx="42" ry="50" fill="#b45309"/>
+    <!-- Eyes -->
+    <circle cx="100" cy="120" r="3" fill="#1f2937"/>
+    <circle cx="140" cy="120" r="3" fill="#1f2937"/>
+    <!-- Smile -->
+    <path d="M105 145 Q120 158 135 145" stroke="#1f2937" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+    <!-- Shoulders/body -->
+    <path d="M40 280 Q120 200 200 280 Z" fill="#475569"/>
+    <rect x="60" y="190" width="120" height="100" rx="20" fill="#64748b"/>
+    <!-- Collar -->
+    <path d="M100 195 L120 220 L140 195" stroke="#94a3b8" stroke-width="3" fill="none"/>
+  </g>
+  <!-- Construction site bg -->
+  <g opacity="0.3">
+    <rect x="0" y="240" width="600" height="100" fill="#92400e"/>
+    <line x1="80" y1="160" x2="80" y2="280" stroke="#78350f" stroke-width="4"/>
+    <line x1="80" y1="160" x2="160" y2="160" stroke="#78350f" stroke-width="4"/>
+    <line x1="520" y1="160" x2="520" y2="280" stroke="#78350f" stroke-width="4"/>
+    <line x1="440" y1="160" x2="520" y2="160" stroke="#78350f" stroke-width="4"/>
+  </g>
+</svg>

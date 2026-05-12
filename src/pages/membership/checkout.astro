@@ -1,0 +1,249 @@
+---
+import AppLayout from "../../layouts/AppLayout.astro";
+import {
+  getPlan,
+  formatTugrik,
+  formatDateRangeFromNow,
+} from "../../lib/membership";
+
+const planId = Astro.url.searchParams.get("plan") ?? "6m";
+const plan = getPlan(planId);
+if (!plan) {
+  return Astro.redirect("/membership");
+}
+
+const toneStyles = {
+  pink: {
+    card: "bg-gradient-to-br from-pink-50 to-pink-100/70 border-pink-200/80",
+    iconTile: "bg-mwa-burgundy text-white",
+    priceColor: "text-mwa-burgundy",
+    divider: "border-mwa-burgundy/10",
+  },
+  purple: {
+    card: "bg-gradient-to-br from-purple-50 to-purple-100/70 border-purple-200/80",
+    iconTile: "bg-purple-800 text-white",
+    priceColor: "text-purple-800",
+    divider: "border-purple-800/10",
+  },
+} as const;
+const s = toneStyles[plan.tone];
+
+const period = formatDateRangeFromNow(plan.months);
+const BENEFITS = [
+  "Бүх контентод хандалт",
+  "Үйл ажиллагаанд хөнгөлөлттэй оролцох",
+  "Сургалт, семинар дээгүүр эрх",
+  "Сар бүр шинэ мэдээлэл хүлээн авах",
+];
+---
+
+<AppLayout
+  title="Гишүүнчлэлийн төлбөр төлөх"
+  activeTab="profile"
+  showHeader={false}
+  showBottomNav={false}
+>
+  <header
+    class="px-3 pt-6 pb-3 flex items-center"
+    data-purpose="checkout-header"
+  >
+    <a href="/membership" aria-label="Буцах" class="p-2">
+      <svg
+        class="h-6 w-6 text-mwa-text-primary"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          d="M15 19l-7-7 7-7"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"></path>
+      </svg>
+    </a>
+    <h1 class="flex-1 text-center text-base font-bold">
+      Гишүүнчлэлийн төлбөр төлөх
+    </h1>
+    <div class="w-10"></div>
+  </header>
+
+  <section class="px-5 pt-2 mb-6">
+    <article class={`relative rounded-2xl overflow-hidden border shadow-sm ${s.card} p-5`}>
+      <div class="flex items-start gap-3 mb-4">
+        <div
+          class={`w-14 h-14 rounded-2xl flex flex-col items-center justify-center shrink-0 ${s.iconTile} shadow-sm`}
+        >
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+            />
+          </svg>
+          <span class="text-base font-extrabold leading-none mt-0.5">{plan.calendarNumber}</span>
+        </div>
+        <div class="flex-1 min-w-0">
+          <h3 class={`text-lg font-extrabold mb-1.5 ${s.priceColor}`}>{plan.label}</h3>
+          <div class="flex items-baseline gap-1.5">
+            <span class={`text-3xl font-extrabold ${s.priceColor}`}>
+              {formatTugrik(plan.monthlyPrice)}
+            </span>
+            <span class="text-xs text-mwa-text-secondary">/ сард</span>
+          </div>
+          <div class="text-[11px] text-mwa-text-secondary mt-0.5">
+            Нийт төлбөр: <strong class={`${s.priceColor}`}>{formatTugrik(plan.totalPrice)}</strong>
+          </div>
+        </div>
+      </div>
+      <ul class={`space-y-2 pt-4 border-t ${s.divider}`}>
+        {BENEFITS.map((b) => (
+          <li class="flex items-start gap-2 text-[13px] text-mwa-text-primary leading-snug">
+            <svg class={`w-4 h-4 shrink-0 mt-0.5 ${s.priceColor}`} fill="currentColor" viewBox="0 0 20 20">
+              <path
+                fill-rule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                clip-rule="evenodd"
+              />
+            </svg>
+            <span>{b}</span>
+          </li>
+        ))}
+      </ul>
+    </article>
+  </section>
+
+  <section class="px-5 mb-6" data-purpose="payment-methods">
+    <h2 class="font-bold text-base mb-3">Төлбөрийн арга</h2>
+
+    <div
+      class="flex items-center gap-3 bg-pink-50 border-2 border-mwa-burgundy rounded-2xl px-4 py-3.5"
+    >
+      <div class="w-10 h-10 rounded-lg bg-white flex items-center justify-center shrink-0">
+        <svg
+          class="w-5 h-5 text-mwa-burgundy"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            d="M3 10h18M5 6h14a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2z"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+          />
+        </svg>
+      </div>
+      <div class="flex-1 min-w-0">
+        <div class="font-bold text-sm">Дансаар төлөх (шууд шилжүүлэг)</div>
+        <div class="text-[11px] text-mwa-text-secondary">
+          Дансны мэдээллээр шууд шилжүүлэг хийх
+        </div>
+      </div>
+      <svg
+        class="w-5 h-5 text-mwa-burgundy shrink-0"
+        fill="currentColor"
+        viewBox="0 0 20 20"
+      >
+        <path
+          fill-rule="evenodd"
+          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+          clip-rule="evenodd"
+        />
+      </svg>
+    </div>
+  </section>
+
+  <section class="px-5 mb-4" data-purpose="order-summary">
+    <div class="bg-gray-50 rounded-2xl p-4 space-y-2 text-sm">
+      <div class="flex justify-between">
+        <span class="text-mwa-text-secondary">Бүтээгдэхүүн</span>
+        <span class="font-semibold">{plan.label}</span>
+      </div>
+      <div class="flex justify-between">
+        <span class="text-mwa-text-secondary">Хугацаа</span>
+        <span class="font-semibold">{period.start} - {period.end}</span>
+      </div>
+      <div class="flex justify-between border-t border-gray-200 pt-2 mt-2">
+        <span class="text-mwa-text-secondary">Нэг удаагийн төлбөр</span>
+        <span class="font-extrabold text-mwa-burgundy">
+          {formatTugrik(plan.totalPrice)}
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <section class="px-5 mb-4">
+    <label class="flex items-start gap-2 cursor-pointer">
+      <input
+        id="agree"
+        type="checkbox"
+        class="w-4 h-4 mt-0.5 accent-mwa-burgundy shrink-0"
+      />
+      <span class="text-xs text-mwa-text-secondary leading-relaxed">
+        <a href="#" class="text-mwa-burgundy font-semibold">Үйлчилгээний нөхцөл</a>
+        болон
+        <a href="#" class="text-mwa-burgundy font-semibold">Нууцлалын бодлого</a>-ыг
+        зөвшөөрч байна.
+      </span>
+    </label>
+  </section>
+
+  <section class="px-5 pb-10">
+    <button
+      id="pay-btn"
+      type="button"
+      class="w-full bg-mwa-burgundy text-white font-bold py-4 rounded-2xl text-base active:opacity-80 disabled:opacity-40"
+      data-plan-id={plan.id}
+      data-amount={String(plan.totalPrice)}
+    >
+      {formatTugrik(plan.totalPrice)} төлөх
+    </button>
+    <p id="checkout-error" class="text-sm text-rose-500 text-center mt-3 hidden"></p>
+  </section>
+</AppLayout>
+
+<script>
+  const btn = document.getElementById("pay-btn") as HTMLButtonElement | null;
+  const agree = document.getElementById("agree") as HTMLInputElement | null;
+  const errorEl = document.getElementById("checkout-error");
+
+  btn?.addEventListener("click", async () => {
+    if (!agree?.checked) {
+      if (errorEl) {
+        errorEl.textContent = "Үйлчилгээний нөхцөлийг зөвшөөрнө үү";
+        errorEl.classList.remove("hidden");
+      }
+      return;
+    }
+    errorEl?.classList.add("hidden");
+    btn.disabled = true;
+    try {
+      const res = await fetch("/api/membership/order", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          plan_id: btn.dataset.planId,
+          agreed: true,
+        }),
+      });
+      const data = (await res.json()) as { ok?: boolean; id?: number; error?: string };
+      if (res.ok && data.ok && data.id !== undefined) {
+        window.location.href = `/membership/pending/${data.id}`;
+      } else {
+        if (errorEl) {
+          errorEl.textContent = data.error ?? "Захиалга үүсгэхэд алдаа гарлаа";
+          errorEl.classList.remove("hidden");
+        }
+      }
+    } catch {
+      if (errorEl) {
+        errorEl.textContent = "Сүлжээний алдаа";
+        errorEl.classList.remove("hidden");
+      }
+    } finally {
+      btn.disabled = false;
+    }
+  });
+</script>

@@ -1,0 +1,421 @@
+---
+import AppLayout from "../../../layouts/AppLayout.astro";
+import { getMembershipPayment } from "../../../lib/db";
+import {
+  getPlan,
+  formatTugrik,
+  BANK_ACCOUNT,
+} from "../../../lib/membership";
+import { loadCurrentUser } from "../../../lib/auth";
+
+const env = Astro.locals.runtime.env;
+const id = Number(Astro.params.id);
+let order = null;
+if (Number.isFinite(id)) {
+  order = await getMembershipPayment(env.DB, id);
+}
+if (!order) {
+  return Astro.redirect("/membership");
+}
+
+const plan = getPlan(order.plan_id);
+const me = await loadCurrentUser(
+  env.DB,
+  env.SESSIONS,
+  Astro.request.headers.get("cookie"),
+);
+
+const initialMemo = order.customer_memo ?? me?.name ?? "";
+
+const statusInfo: Record<
+  string,
+  { label: string; tone: string; iconBg: string; icon: string }
+> = {
+  pending: {
+    label: "Төлбөр хүлээгдэж байна",
+    tone: "text-mwa-burgundy",
+    iconBg: "bg-mwa-burgundy/10 text-mwa-burgundy",
+    icon: '<path d="M12 8v4l3 2m6-2a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>',
+  },
+  confirmed: {
+    label: "Төлбөр баталгаажсан",
+    tone: "text-emerald-700",
+    iconBg: "bg-emerald-100 text-emerald-600",
+    icon: '<path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>',
+  },
+  rejected: {
+    label: "Төлбөр татгалзсан",
+    tone: "text-rose-700",
+    iconBg: "bg-rose-100 text-rose-600",
+    icon: '<path d="M6 18L18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>',
+  },
+};
+const status = statusInfo[order.status] ?? statusInfo.pending;
+const created = new Date(order.created_at * 1000);
+const pad = (n: number) => String(n).padStart(2, "0");
+const createdLabel = `${created.getFullYear()}.${pad(created.getMonth() + 1)}.${pad(created.getDate())} ${pad(created.getHours())}:${pad(created.getMinutes())}`;
+---
+
+<AppLayout
+  title="Төлбөрийн төлөв"
+  activeTab="profile"
+  showHeader={false}
+  showBottomNav={false}
+>
+  <header
+    class="px-3 pt-6 pb-3 flex items-center"
+    data-purpose="pending-header"
+  >
+    <a href="/membership" aria-label="Буцах" class="p-2">
+      <svg
+        class="h-6 w-6 text-mwa-text-primary"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          d="M15 19l-7-7 7-7"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"></path>
+      </svg>
+    </a>
+    <h1 class="flex-1 text-center text-base font-bold">Төлбөрийн төлөв</h1>
+    <div class="w-10"></div>
+  </header>
+
+  <section
+    class="px-5 pb-4 text-center"
+    data-purpose="status"
+    data-order-id={String(order.id)}
+    data-current-status={order.status}
+  >
+    <div
+      class={`w-16 h-16 rounded-full ${status.iconBg} flex items-center justify-center mx-auto mb-3`}
+      data-status-icon
+    >
+      <svg
+        class="w-8 h-8"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        set:html={status.icon}
+      />
+    </div>
+    <h2 class={`font-extrabold text-lg ${status.tone}`} data-status-label>
+      {status.label}
+    </h2>
+    <p class="text-xs text-mwa-text-secondary mt-1">
+      Захиалгын дугаар: <span class="font-mono">{order.reference}</span>
+    </p>
+  </section>
+
+  <section class="px-5 mb-5" data-purpose="status-timeline">
+    <div class="flex items-center gap-2">
+      <div class="flex-1 flex items-center gap-2">
+        <span class="w-7 h-7 shrink-0 rounded-full bg-mwa-burgundy text-white text-xs font-bold flex items-center justify-center">
+          ✓
+        </span>
+        <div class="text-[11px] leading-tight">
+          <div class="font-bold text-mwa-text-primary">Захиалга</div>
+          <div class="text-gray-400">үүсгэсэн</div>
+        </div>
+      </div>
+      <div
+        class={`flex-1 h-[2px] ${order.status === "pending" || order.status === "confirmed" ? "bg-mwa-burgundy" : "bg-gray-200"}`}
+        data-line-1
+      ></div>
+      <div class="flex-1 flex items-center gap-2">
+        <span
+          class={`w-7 h-7 shrink-0 rounded-full text-xs font-bold flex items-center justify-center transition-colors ${
+            order.status === "pending"
+              ? "bg-mwa-burgundy text-white animate-pulse"
+              : order.status === "confirmed"
+                ? "bg-mwa-burgundy text-white"
+                : "bg-gray-200 text-gray-400"
+          }`}
+          data-step-2
+        >
+          {order.status === "rejected" ? "×" : "●"}
+        </span>
+        <div class="text-[11px] leading-tight">
+          <div class="font-bold text-mwa-text-primary">Шилжүүлэг</div>
+          <div class="text-gray-400">хүлээгдэж буй</div>
+        </div>
+      </div>
+      <div
+        class={`flex-1 h-[2px] ${order.status === "confirmed" ? "bg-mwa-burgundy" : "bg-gray-200"}`}
+        data-line-2
+      ></div>
+      <div class="flex items-center gap-2">
+        <span
+          class={`w-7 h-7 shrink-0 rounded-full text-xs font-bold flex items-center justify-center transition-colors ${
+            order.status === "confirmed"
+              ? "bg-emerald-600 text-white"
+              : "bg-gray-200 text-gray-400"
+          }`}
+          data-step-3
+        >
+          ✓
+        </span>
+        <div class="text-[11px] leading-tight">
+          <div class="font-bold text-mwa-text-primary">Баталгаажсан</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  {
+    order.status === "pending" && (
+      <section class="px-5 mb-6">
+        <div
+          class="bg-mwa-burgundy/5 border border-mwa-burgundy/20 text-mwa-text-primary rounded-2xl p-4 text-xs leading-relaxed"
+        >
+          <div class="font-bold mb-1 text-mwa-burgundy">📌 Төлбөр шилжүүлэх заавар</div>
+          Доорх дансанд яг тохирох дүнг шилжүүлэхдээ <strong>гүйлгээний утга</strong>
+          талбарт <strong>өөрийн нэрээ</strong> оруулна уу. Бид нэг ажлын
+          өдрийн дотор баталгаажуулна.
+        </div>
+      </section>
+    )
+  }
+
+  <section class="px-5 mb-6" data-purpose="bank-info">
+    <div class="bg-white border border-gray-200 rounded-2xl divide-y divide-gray-100">
+      <div class="flex items-center justify-between p-4">
+        <div>
+          <div class="text-[11px] text-mwa-text-secondary">Хүлээн авагч банк</div>
+          <div class="font-bold text-sm">{BANK_ACCOUNT.bank}</div>
+        </div>
+      </div>
+      <div class="flex items-center justify-between p-4">
+        <div class="min-w-0">
+          <div class="text-[11px] text-mwa-text-secondary">Дансны дугаар</div>
+          <div class="font-bold text-base font-mono">{BANK_ACCOUNT.number}</div>
+        </div>
+        <button
+          type="button"
+          class="text-xs font-bold text-mwa-burgundy border border-mwa-burgundy rounded-lg px-3 py-1.5 active:bg-mwa-burgundy active:text-white shrink-0"
+          data-copy={BANK_ACCOUNT.number}
+        >
+          Хуулах
+        </button>
+      </div>
+      <div class="flex items-center justify-between p-4">
+        <div>
+          <div class="text-[11px] text-mwa-text-secondary">Дансны эзэн</div>
+          <div class="font-bold text-sm">{BANK_ACCOUNT.holder}</div>
+        </div>
+      </div>
+      <div class="p-4 bg-mwa-burgundy/5">
+        <div class="flex items-center justify-between gap-2 mb-2">
+          <div class="text-[11px] text-mwa-text-secondary">
+            Гүйлгээний утга (заавал — өөрийн нэр)
+          </div>
+          {order.status === "pending" && (
+            <span
+              class="text-[10px] font-bold text-emerald-600 hidden"
+              data-memo-saved
+            >
+              Хадгалагдсан ✓
+            </span>
+          )}
+        </div>
+        {
+          order.status === "pending" ? (
+            <div class="flex items-center gap-2">
+              <input
+                type="text"
+                value={initialMemo}
+                placeholder="Жнь: Бат-Эрдэнэ"
+                maxlength="60"
+                class="flex-1 min-w-0 bg-white border border-mwa-burgundy/30 rounded-lg px-3 py-2 text-sm font-bold text-mwa-burgundy focus:outline-none focus:border-mwa-burgundy"
+                data-memo-input
+              />
+              <button
+                type="button"
+                class="text-xs font-bold text-mwa-burgundy border border-mwa-burgundy rounded-lg px-3 py-2 active:bg-mwa-burgundy active:text-white shrink-0"
+                data-copy-memo
+              >
+                Хуулах
+              </button>
+            </div>
+          ) : (
+            <div class="flex items-center gap-2">
+              <div class="flex-1 font-bold text-base text-mwa-burgundy">
+                {order.customer_memo ?? order.reference}
+              </div>
+            </div>
+          )
+        }
+      </div>
+      <div class="flex items-center justify-between p-4">
+        <div>
+          <div class="text-[11px] text-mwa-text-secondary">Шилжүүлэх дүн</div>
+          <div class="font-extrabold text-xl text-mwa-burgundy">
+            {formatTugrik(order.amount)}
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="px-5 mb-6" data-purpose="order-summary">
+    <h3 class="font-bold text-sm mb-2">Захиалгын мэдээлэл</h3>
+    <div class="bg-gray-50 rounded-2xl p-4 space-y-1.5 text-sm">
+      <div class="flex justify-between">
+        <span class="text-mwa-text-secondary">Бүтээгдэхүүн</span>
+        <span class="font-semibold">{plan?.label ?? order.plan_id}</span>
+      </div>
+      <div class="flex justify-between">
+        <span class="text-mwa-text-secondary">Үргэлжлэх хугацаа</span>
+        <span class="font-semibold">{order.months} сар</span>
+      </div>
+      <div class="flex justify-between">
+        <span class="text-mwa-text-secondary">Үүсгэсэн</span>
+        <span class="font-semibold">{createdLabel}</span>
+      </div>
+      <div class="flex justify-between">
+        <span class="text-mwa-text-secondary">Төлбөрийн арга</span>
+        <span class="font-semibold">Дансаар шилжүүлэг</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="px-5 pb-10 space-y-2">
+    <a
+      href="/membership"
+      class="block text-center bg-white border border-gray-200 text-mwa-text-primary font-bold py-3.5 rounded-2xl text-sm"
+    >
+      Гишүүнчлэлийн жагсаалт руу буцах
+    </a>
+    <a
+      href="/chat"
+      class="block text-center text-mwa-burgundy font-bold py-2 text-xs"
+    >
+      Асуудал гарвал админтай чатлах →
+    </a>
+  </section>
+</AppLayout>
+
+<script>
+  type OrderStatus = "pending" | "confirmed" | "rejected";
+  interface OrderShape {
+    id: number;
+    status: OrderStatus;
+    customer_memo: string | null;
+  }
+  interface OrderResponse {
+    order: OrderShape;
+  }
+
+  // Copy buttons (bank number)
+  document.querySelectorAll<HTMLButtonElement>("[data-copy]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const text = btn.dataset.copy ?? "";
+      try {
+        await navigator.clipboard.writeText(text);
+        const original = btn.textContent;
+        btn.textContent = "Хуулсан ✓";
+        window.setTimeout(() => {
+          btn.textContent = original;
+        }, 1500);
+      } catch {
+        // ignore
+      }
+    });
+  });
+
+  // Memo input — debounced PATCH on input; copy button copies current value
+  const statusRoot = document.querySelector<HTMLElement>("[data-purpose=\"status\"]");
+  const orderId = statusRoot?.dataset.orderId;
+  const memoInput = document.querySelector<HTMLInputElement>("[data-memo-input]");
+  const memoSavedBadge = document.querySelector<HTMLElement>("[data-memo-saved]");
+  const memoCopyBtn = document.querySelector<HTMLButtonElement>("[data-copy-memo]");
+
+  if (memoInput && orderId) {
+    let saveTimer: number | null = null;
+    let lastSaved = memoInput.value;
+
+    const save = async () => {
+      const value = memoInput.value.trim();
+      if (value === lastSaved) return;
+      try {
+        const res = await fetch(`/api/membership/order/${orderId}`, {
+          method: "PATCH",
+          credentials: "same-origin",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ customer_memo: value }),
+        });
+        if (res.ok) {
+          lastSaved = value;
+          if (memoSavedBadge) {
+            memoSavedBadge.classList.remove("hidden");
+            window.setTimeout(() => memoSavedBadge.classList.add("hidden"), 2000);
+          }
+        }
+      } catch {
+        // ignore transient errors
+      }
+    };
+
+    memoInput.addEventListener("input", () => {
+      if (saveTimer !== null) clearTimeout(saveTimer);
+      saveTimer = window.setTimeout(save, 600);
+    });
+    memoInput.addEventListener("blur", () => {
+      if (saveTimer !== null) clearTimeout(saveTimer);
+      save();
+    });
+  }
+
+  if (memoCopyBtn && memoInput) {
+    memoCopyBtn.addEventListener("click", async () => {
+      const value = memoInput.value.trim();
+      if (!value) return;
+      try {
+        await navigator.clipboard.writeText(value);
+        const original = memoCopyBtn.textContent;
+        memoCopyBtn.textContent = "Хуулсан ✓";
+        window.setTimeout(() => {
+          memoCopyBtn.textContent = original;
+        }, 1500);
+      } catch {
+        // ignore
+      }
+    });
+  }
+
+  // Status polling — every 8s, refresh status from server; if changed, reload page
+  if (statusRoot && orderId) {
+    const initialStatus = statusRoot.dataset.currentStatus as OrderStatus;
+    if (initialStatus === "pending") {
+      let pollTimer: number | null = null;
+      const poll = async () => {
+        try {
+          const res = await fetch(`/api/membership/order/${orderId}`, {
+            credentials: "same-origin",
+          });
+          if (!res.ok) return;
+          const data = (await res.json()) as OrderResponse;
+          if (data.order.status !== initialStatus) {
+            // Admin changed status — reload to show new state.
+            if (pollTimer !== null) clearInterval(pollTimer);
+            window.location.reload();
+          }
+        } catch {
+          // transient — keep polling
+        }
+      };
+      pollTimer = window.setInterval(poll, 8000);
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden && pollTimer !== null) {
+          clearInterval(pollTimer);
+          pollTimer = null;
+        } else if (!document.hidden && pollTimer === null) {
+          pollTimer = window.setInterval(poll, 8000);
+        }
+      });
+    }
+  }
+</script>

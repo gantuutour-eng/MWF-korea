@@ -1,0 +1,36 @@
+---
+import AppLayout from "../../layouts/AppLayout.astro";
+import ChatThread from "../../components/ChatThread.astro";
+import { listChatMessages, markChatRead } from "../../lib/db";
+import { loadCurrentUser } from "../../lib/auth";
+
+const env = Astro.locals.runtime.env;
+const me = await loadCurrentUser(
+  env.DB,
+  env.SESSIONS,
+  Astro.request.headers.get("cookie"),
+);
+
+if (!me) {
+  return Astro.redirect("/profile/login?next=/chat");
+}
+
+// Admins don't have their own conversation — send them to the admin list instead.
+if (me.role === "admin") {
+  return Astro.redirect("/admin/chat");
+}
+
+const messages = await listChatMessages(env.DB, me.id);
+await markChatRead(env.DB, me.id, me.role);
+---
+
+<AppLayout title="Чат" activeTab="chat" showHeader={false} showBottomNav={false}>
+  <ChatThread
+    initialMessages={messages}
+    viewerId={me.id}
+    viewerRole={me.role}
+    partnerName="MWA дэмжлэг"
+    partnerInitial="M"
+    backHref="/"
+  />
+</AppLayout>

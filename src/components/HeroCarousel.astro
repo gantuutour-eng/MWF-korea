@@ -1,0 +1,200 @@
+---
+interface Slide {
+  title: string;
+  subtitle?: string | null;
+  href?: string | null;
+  image_url?: string | null;
+}
+
+interface Props {
+  slides: Slide[];
+  autoplayMs?: number;
+}
+
+const { slides, autoplayMs = 5000 } = Astro.props;
+---
+
+<section class="px-5 mb-8" data-purpose="hero-section">
+  <div
+    class="hero-carousel relative"
+    data-hero-carousel
+    data-autoplay-ms={autoplayMs}
+  >
+    <div
+      class="hero-track flex overflow-x-auto snap-x snap-mandatory scroll-smooth -mx-1"
+      data-hero-track
+    >
+      {
+        slides.map((slide) => {
+          const Tag = slide.href ? "a" : "div";
+          return (
+            <Tag
+              href={slide.href}
+              class="snap-center shrink-0 w-full px-1"
+            >
+              <div class="bg-mwa-burgundy rounded-[24px] relative overflow-hidden min-h-[220px] flex flex-col justify-center text-white">
+                {slide.image_url ? (
+                  <>
+                    <img
+                      src={slide.image_url}
+                      alt=""
+                      class="absolute inset-0 w-full h-full object-cover"
+                    />
+                    <div class="absolute inset-0 bg-gradient-to-br from-black/55 via-black/25 to-black/55" />
+                  </>
+                ) : (
+                  <>
+                    <div class="absolute right-0 top-0 h-full w-2/3 opacity-30 pointer-events-none">
+                      <svg class="h-full w-full" viewBox="0 0 100 100">
+                        <circle
+                          cx="90"
+                          cy="50"
+                          fill="none"
+                          r="45"
+                          stroke="white"
+                          stroke-width="0.2"
+                        />
+                        <path
+                          d="M60,20 Q85,20 85,50 Q85,80 60,80"
+                          fill="none"
+                          stroke="white"
+                          stroke-width="0.2"
+                        />
+                      </svg>
+                    </div>
+                    <div class="absolute right-[-10px] top-4 w-48 h-48 opacity-90 pointer-events-none">
+                      <svg fill="white" viewBox="0 0 200 200">
+                        <path
+                          d="M140,40 C110,40 90,60 90,90 C90,120 110,160 140,160 L140,160 C170,160 190,130 190,100 C190,70 170,40 140,40 Z"
+                          opacity="0.1"
+                        />
+                        <path
+                          d="M130,50 Q100,50 100,100 Q100,150 130,150"
+                          fill="none"
+                          stroke="white"
+                          stroke-width="1"
+                        />
+                        <circle cx="120" cy="90" fill="white" r="3" />
+                      </svg>
+                    </div>
+                  </>
+                )}
+                <div class="relative z-10 p-6 space-y-4">
+                  <h1
+                    class="text-2xl font-bold leading-tight drop-shadow-sm"
+                    set:html={slide.title}
+                  />
+                  {slide.subtitle && (
+                    <p
+                      class="text-sm font-light opacity-90 drop-shadow-sm"
+                      set:html={slide.subtitle}
+                    />
+                  )}
+                </div>
+              </div>
+            </Tag>
+          );
+        })
+      }
+    </div>
+
+    {
+      slides.length > 1 && (
+        <div
+          class="flex justify-center gap-1.5 mt-3"
+          data-hero-dots
+          aria-hidden="true"
+        >
+          {slides.map((_, i) => (
+            <button
+              type="button"
+              data-hero-dot={i}
+              aria-label={`Slide ${i + 1}`}
+              class="h-1.5 rounded-full bg-mwa-burgundy/30 transition-all"
+              style="width: 6px"
+            />
+          ))}
+        </div>
+      )
+    }
+  </div>
+</section>
+
+<style>
+  .hero-track {
+    scrollbar-width: none;
+  }
+  .hero-track::-webkit-scrollbar {
+    display: none;
+  }
+</style>
+
+<script>
+  function initHeroCarousel(root: HTMLElement) {
+    const track = root.querySelector<HTMLElement>("[data-hero-track]");
+    const dots = root.querySelectorAll<HTMLElement>("[data-hero-dot]");
+    if (!track || dots.length === 0) return;
+
+    const autoplayMs = Number(root.dataset.autoplayMs ?? 0);
+    let userInteracted = false;
+    let timer: number | null = null;
+
+    const updateDots = () => {
+      const slideWidth = track.clientWidth;
+      const index = Math.round(track.scrollLeft / slideWidth);
+      dots.forEach((dot, i) => {
+        if (i === index) {
+          dot.style.width = "18px";
+          dot.classList.remove("bg-mwa-burgundy/30");
+          dot.classList.add("bg-mwa-burgundy");
+        } else {
+          dot.style.width = "6px";
+          dot.classList.add("bg-mwa-burgundy/30");
+          dot.classList.remove("bg-mwa-burgundy");
+        }
+      });
+    };
+
+    const goTo = (index: number) => {
+      track.scrollTo({ left: track.clientWidth * index, behavior: "smooth" });
+    };
+
+    dots.forEach((dot, i) => {
+      dot.addEventListener("click", () => {
+        userInteracted = true;
+        goTo(i);
+      });
+    });
+
+    track.addEventListener("scroll", updateDots, { passive: true });
+    track.addEventListener("touchstart", () => (userInteracted = true), {
+      passive: true,
+    });
+    track.addEventListener("pointerdown", () => (userInteracted = true));
+
+    if (autoplayMs > 0) {
+      timer = window.setInterval(() => {
+        if (userInteracted) return;
+        const slideWidth = track.clientWidth;
+        const index = Math.round(track.scrollLeft / slideWidth);
+        const next = (index + 1) % dots.length;
+        goTo(next);
+      }, autoplayMs);
+    }
+
+    updateDots();
+
+    if (timer !== null) {
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden && timer !== null) {
+          clearInterval(timer);
+          timer = null;
+        }
+      });
+    }
+  }
+
+  document
+    .querySelectorAll<HTMLElement>("[data-hero-carousel]")
+    .forEach(initHeroCarousel);
+</script>

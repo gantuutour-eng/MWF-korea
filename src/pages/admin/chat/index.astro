@@ -1,0 +1,99 @@
+---
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+import { listChatConversations } from "../../../lib/db";
+import { loadAdmin } from "../../../lib/adminAuth";
+
+const env = Astro.locals.runtime.env;
+const me = await loadAdmin(
+  env.DB,
+  env.SESSIONS,
+  Astro.request.headers.get("cookie"),
+);
+if (!me) return Astro.redirect("/profile/login?next=/admin/chat");
+
+const conversations = await listChatConversations(env.DB);
+
+function fmtRelative(unix: number): string {
+  const diff = Math.floor(Date.now() / 1000) - unix;
+  if (diff < 60) return "одоо";
+  if (diff < 3600) return `${Math.floor(diff / 60)} мин`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)} цаг`;
+  return `${Math.floor(diff / 86400)} өдөр`;
+}
+---
+
+<AdminLayout title="Чатын жагсаалт" active="chat">
+  <header
+    class="lg:hidden px-3 pt-6 pb-3 flex items-center bg-white border-b border-gray-100 sticky top-0 z-20"
+    data-purpose="admin-chat-header"
+  >
+    <a href="/admin" aria-label="Буцах" class="p-2">
+      <svg
+        class="h-6 w-6 text-mwa-text-primary"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          d="M15 19l-7-7 7-7"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"></path>
+      </svg>
+    </a>
+    <h1 class="flex-1 text-center text-lg font-bold">Чатын жагсаалт</h1>
+    <div class="w-10"></div>
+  </header>
+
+  <div class="max-w-4xl mx-auto lg:px-8 lg:py-8">
+    <div class="hidden lg:block mb-6">
+      <h1 class="text-2xl font-extrabold">Чатын жагсаалт</h1>
+      <p class="text-sm text-gray-500 mt-1">Бүх гишүүдийн харилцан яриа</p>
+    </div>
+
+    <section class="px-5 lg:px-0 lg:hidden pt-2 pb-4">
+      <p class="text-xs text-gray-400">Бүх гишүүдийн харилцан яриа</p>
+    </section>
+
+  <section class="divide-y divide-gray-100 lg:bg-white lg:rounded-2xl lg:border lg:border-gray-200 lg:shadow-sm lg:overflow-hidden">
+    {
+      conversations.length === 0 && (
+        <div class="text-center py-16 text-gray-400 text-sm">
+          Одоогоор харилцан яриа алга байна.
+        </div>
+      )
+    }
+    {
+      conversations.map((c) => (
+        <a
+          href={`/admin/chat/${c.user_id}`}
+          class="flex items-center gap-3 px-5 py-3 active:bg-gray-50"
+        >
+          <div class="relative w-12 h-12 rounded-full bg-mwa-burgundy text-white flex items-center justify-center font-bold shrink-0">
+            {c.user_name.charAt(0).toUpperCase()}
+            {c.unread_count > 0 && (
+              <span class="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center">
+                {c.unread_count > 99 ? "99+" : c.unread_count}
+              </span>
+            )}
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="flex items-center justify-between gap-2 mb-0.5">
+              <div class="font-semibold text-sm truncate">{c.user_name}</div>
+              <span class="text-[11px] text-gray-400 shrink-0">
+                {fmtRelative(c.last_at)}
+              </span>
+            </div>
+            <div class="text-xs text-gray-500 truncate">
+              {c.last_author_role === "admin" && (
+                <span class="text-mwa-burgundy font-semibold">Та: </span>
+              )}
+              {c.last_body}
+            </div>
+          </div>
+        </a>
+      ))
+    }
+  </section>
+  </div>
+</AdminLayout>

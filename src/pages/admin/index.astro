@@ -1,0 +1,260 @@
+---
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import { loadAdmin } from "../../lib/adminAuth";
+
+const env = Astro.locals.runtime.env;
+const me = await loadAdmin(
+  env.DB,
+  env.SESSIONS,
+  Astro.request.headers.get("cookie"),
+);
+if (!me) return Astro.redirect("/profile/login?next=/admin");
+
+interface Count { c: number }
+const [pending, unread, news, events, programs, members] = await Promise.all([
+  env.DB.prepare(
+    "SELECT COUNT(*) AS c FROM membership_payments WHERE status='pending'",
+  ).first<Count>(),
+  env.DB.prepare(
+    "SELECT COUNT(*) AS c FROM chat_messages WHERE author_role='member' AND read_at IS NULL",
+  ).first<Count>(),
+  env.DB.prepare("SELECT COUNT(*) AS c FROM news").first<Count>(),
+  env.DB.prepare(
+    "SELECT COUNT(*) AS c FROM events WHERE start_at >= unixepoch()",
+  ).first<Count>(),
+  env.DB.prepare("SELECT COUNT(*) AS c FROM portfolio_programs").first<Count>(),
+  env.DB.prepare(
+    "SELECT COUNT(*) AS c FROM users WHERE role='member'",
+  ).first<Count>(),
+]);
+
+interface StatCard {
+  label: string;
+  value: number;
+  href: string;
+  tone: "burgundy" | "amber" | "blue" | "emerald" | "purple" | "rose";
+  icon: string;
+}
+const stats: StatCard[] = [
+  {
+    label: "Хүлээгдэж буй төлбөр",
+    value: pending?.c ?? 0,
+    href: "/admin/payments?status=pending",
+    tone: "burgundy",
+    icon: '<path d="M3 10h18M5 6h14a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>',
+  },
+  {
+    label: "Уншаагүй чат",
+    value: unread?.c ?? 0,
+    href: "/admin/chat",
+    tone: "rose",
+    icon: '<path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>',
+  },
+  {
+    label: "Нийт мэдээ",
+    value: news?.c ?? 0,
+    href: "/admin/news/new",
+    tone: "amber",
+    icon: '<path d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10l4 4v10a2 2 0 01-2 2zM7 8h5m-5 4h5m-5 4h5" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>',
+  },
+  {
+    label: "Хөтөлбөрүүд",
+    value: programs?.c ?? 0,
+    href: "/admin/portfolio",
+    tone: "emerald",
+    icon: '<path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>',
+  },
+  {
+    label: "Удахгүй болох арга хэмжээ",
+    value: events?.c ?? 0,
+    href: "/admin/events",
+    tone: "purple",
+    icon: '<path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>',
+  },
+  {
+    label: "Бүртгэлтэй гишүүд",
+    value: members?.c ?? 0,
+    href: "/admin/users",
+    tone: "blue",
+    icon: '<path d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6 5.87v-2a4 4 0 00-4-4H7a4 4 0 00-4 4v2m13-13a4 4 0 11-8 0 4 4 0 018 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>',
+  },
+];
+
+const toneClass: Record<StatCard["tone"], { bg: string; text: string; ring: string }> = {
+  burgundy: { bg: "bg-mwa-burgundy/10", text: "text-mwa-burgundy", ring: "border-mwa-burgundy/20" },
+  amber: { bg: "bg-amber-50", text: "text-amber-700", ring: "border-amber-200" },
+  blue: { bg: "bg-blue-50", text: "text-blue-700", ring: "border-blue-200" },
+  emerald: { bg: "bg-emerald-50", text: "text-emerald-700", ring: "border-emerald-200" },
+  purple: { bg: "bg-purple-50", text: "text-purple-700", ring: "border-purple-200" },
+  rose: { bg: "bg-rose-50", text: "text-rose-700", ring: "border-rose-200" },
+};
+
+const actions = [
+  {
+    label: "Чат хариулах",
+    desc: "Гишүүдээс ирсэн зурвасууд",
+    href: "/admin/chat",
+    icon: '<path d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>',
+  },
+  {
+    label: "Төлбөр баталгаажуулах",
+    desc: "Хүлээгдэж буй захиалгуудыг баталгаажуулах",
+    href: "/admin/payments",
+    icon: '<path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>',
+  },
+  {
+    label: "Шинэ мэдээ нэмэх",
+    desc: "Гишүүдэд хүрэх мэдээллийг нийтлэх",
+    href: "/admin/news/new",
+    icon: '<path d="M12 4v16m8-8H4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>',
+  },
+  {
+    label: "Хийгдсэн ажлууд",
+    desc: "Хөтөлбөр, статистикийг шинэчлэх",
+    href: "/admin/portfolio",
+    icon: '<path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>',
+  },
+  {
+    label: "Үндсэн хуудасны баннер",
+    desc: "Нүүр хуудсанд харагдах слайд, зураг удирдах",
+    href: "/admin/hero",
+    icon: '<path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>',
+  },
+  {
+    label: "Арга хэмжээ удирдах",
+    desc: "Үйл ажиллагаа нэмэх, устгах",
+    href: "/admin/events",
+    icon: '<path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>',
+  },
+  {
+    label: "Хэрэглэгчид",
+    desc: "Гишүүд, админууд, эрхийн удирдлага",
+    href: "/admin/users",
+    icon: '<path d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87m6 5.87v-2a4 4 0 00-4-4H7a4 4 0 00-4 4v2m13-13a4 4 0 11-8 0 4 4 0 018 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>',
+  },
+];
+---
+
+<AdminLayout title="Админ панель" active="dashboard">
+  <header
+    class="lg:hidden px-3 pt-6 pb-3 flex items-center bg-white border-b border-gray-100 sticky top-0 z-20"
+    data-purpose="admin-header"
+  >
+    <a href="/" aria-label="Буцах" class="p-2">
+      <svg
+        class="h-6 w-6 text-mwa-text-primary"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          d="M15 19l-7-7 7-7"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"></path>
+      </svg>
+    </a>
+    <h1 class="flex-1 text-center text-lg font-bold">Админ панель</h1>
+    <div class="w-10"></div>
+  </header>
+
+  <div class="max-w-6xl mx-auto px-5 lg:px-8 lg:py-8">
+    <section class="pb-5 lg:pb-8">
+      <div class="text-xs text-mwa-text-secondary">Сайн байна уу,</div>
+      <div class="text-xl lg:text-2xl font-extrabold mt-0.5">{me.name}</div>
+      <div
+        class="text-[11px] text-mwa-burgundy font-bold uppercase tracking-wider mt-1"
+      >
+        Админ эрх
+      </div>
+    </section>
+
+    <section class="mb-6 lg:mb-8" data-purpose="stats">
+      <div class="grid grid-cols-2 lg:grid-cols-3 gap-3 lg:gap-4">
+      {
+        stats.map((s) => {
+          const tc = toneClass[s.tone];
+          return (
+            <a
+              href={s.href}
+              class={`block rounded-2xl border ${tc.ring} ${tc.bg} p-3 lg:p-5 active:opacity-80 hover:shadow-md transition-shadow`}
+            >
+              <div class="flex items-center justify-between mb-2">
+                <svg
+                  class={`w-5 h-5 lg:w-6 lg:h-6 ${tc.text}`}
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  set:html={s.icon}
+                />
+                <svg
+                  class="w-3 h-3 text-gray-400"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    d="M9 5l7 7-7 7"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                  />
+                </svg>
+              </div>
+              <div class={`text-2xl lg:text-3xl font-extrabold ${tc.text}`}>
+                {s.value.toLocaleString()}
+              </div>
+              <div class="text-[11px] lg:text-sm text-mwa-text-secondary mt-0.5 leading-snug">
+                {s.label}
+              </div>
+            </a>
+          );
+        })
+      }
+    </div>
+  </section>
+
+    <section class="mb-10" data-purpose="actions">
+      <h2 class="font-bold text-base lg:text-lg mb-3">Удирдлагын хэсэг</h2>
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-2 lg:gap-3">
+        {
+          actions.map((a) => (
+            <a
+              href={a.href}
+              class="flex items-center gap-3 bg-white border border-gray-100 rounded-2xl shadow-sm p-4 active:bg-gray-50 hover:shadow-md transition-shadow"
+            >
+              <div class="w-10 h-10 lg:w-12 lg:h-12 rounded-xl bg-mwa-burgundy/10 text-mwa-burgundy flex items-center justify-center shrink-0">
+                <svg
+                  class="w-5 h-5 lg:w-6 lg:h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  set:html={a.icon}
+                />
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="font-bold text-sm lg:text-base">{a.label}</div>
+                <div class="text-[11px] lg:text-xs text-mwa-text-secondary">
+                  {a.desc}
+                </div>
+              </div>
+              <svg
+                class="w-4 h-4 text-gray-300"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  d="M9 5l7 7-7 7"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                />
+              </svg>
+            </a>
+          ))
+        }
+      </div>
+    </section>
+  </div>
+</AdminLayout>

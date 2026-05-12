@@ -1,0 +1,188 @@
+---
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+import { loadAdmin } from "../../../lib/adminAuth";
+import { listEvents } from "../../../lib/db";
+import { styleFor, formatDate, formatTime } from "../../../lib/eventStyles";
+
+const env = Astro.locals.runtime.env;
+const me = await loadAdmin(env.DB, env.SESSIONS, Astro.request.headers.get("cookie"));
+if (!me) return Astro.redirect("/profile/login?next=/admin/events");
+
+const whenParam = Astro.url.searchParams.get("when");
+const activeWhen: "upcoming" | "past" =
+  whenParam === "past" ? "past" : "upcoming";
+
+const rows = await listEvents(env.DB, { when: activeWhen });
+
+const tabs = [
+  { key: "upcoming", label: "Удахгүй болох", href: "/admin/events" },
+  { key: "past", label: "Өнгөрсөн", href: "/admin/events?when=past" },
+];
+---
+
+<AdminLayout title="Үйл ажиллагаа" active="events">
+  <header class="lg:hidden px-3 pt-6 pb-3 flex items-center bg-white border-b border-gray-100 sticky top-0 z-20">
+    <a href="/admin" aria-label="Буцах" class="p-2">
+      <svg
+        class="h-6 w-6 text-mwa-text-primary"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          d="M15 19l-7-7 7-7"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"></path>
+      </svg>
+    </a>
+    <h1 class="flex-1 text-center text-lg font-bold">Үйл ажиллагаа</h1>
+    <a
+      href="/admin/events/new"
+      class="text-xs font-bold text-mwa-burgundy p-2"
+    >
+      + Нэмэх
+    </a>
+  </header>
+
+  <div class="max-w-6xl mx-auto lg:px-8 lg:py-8">
+    <div class="hidden lg:flex items-center justify-between mb-6">
+      <h1 class="text-2xl font-extrabold">Үйл ажиллагаа</h1>
+      <a
+        href="/admin/events/new"
+        class="bg-mwa-burgundy text-white text-sm font-bold rounded-lg px-4 py-2.5 active:opacity-80 hover:opacity-90"
+      >
+        + Шинэ арга хэмжээ нэмэх
+      </a>
+    </div>
+
+  <nav class="px-5 lg:px-0 border-b border-gray-100 flex items-center gap-2">
+    {
+      tabs.map((t) => {
+        const active = t.key === activeWhen;
+        return (
+          <a
+            href={t.href}
+            class={`flex-1 text-center py-3 text-sm font-semibold relative ${
+              active ? "text-mwa-burgundy" : "text-gray-400"
+            }`}
+          >
+            {t.label}
+            {active && (
+              <span class="absolute bottom-0 left-1/4 right-1/4 h-[3px] bg-mwa-burgundy rounded-t-full" />
+            )}
+          </a>
+        );
+      })
+    }
+  </nav>
+
+  <section class="px-5 lg:px-0 pt-4 pb-10 lg:grid lg:grid-cols-2 lg:gap-3 space-y-2 lg:space-y-0" data-purpose="events-list">
+    {
+      rows.length === 0 && (
+        <div class="text-center py-12 text-gray-400 text-sm">
+          {activeWhen === "upcoming"
+            ? "Удахгүй болох арга хэмжээ алга."
+            : "Өнгөрсөн арга хэмжээ алга."}
+          <div class="mt-3">
+            <a
+              href="/admin/events/new"
+              class="inline-block bg-mwa-burgundy text-white text-xs font-bold rounded-lg px-4 py-2 active:opacity-80"
+            >
+              + Шинэ арга хэмжээ нэмэх
+            </a>
+          </div>
+        </div>
+      )
+    }
+    {
+      rows.map((row) => {
+        const s = styleFor(row.type);
+        return (
+          <article
+            class="bg-white border border-gray-100 rounded-2xl shadow-sm p-4"
+            data-event-id={row.id}
+          >
+            <div class="flex items-start justify-between gap-2 mb-2">
+              <div class="min-w-0">
+                <span
+                  class={`inline-block text-[10px] font-bold px-1.5 py-0.5 rounded ${s.chip}`}
+                >
+                  {s.label}
+                </span>
+                <h3 class="font-bold text-sm leading-tight mt-1">{row.title}</h3>
+              </div>
+              <a
+                href={`/events/${row.id}`}
+                class="text-[10px] text-mwa-burgundy font-bold p-1 shrink-0"
+              >
+                Харах
+              </a>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 text-[11px] mb-3">
+              <div>
+                <div class="text-gray-400">Огноо</div>
+                <div class="font-semibold">{formatDate(row.start_at)}</div>
+              </div>
+              <div>
+                <div class="text-gray-400">Цаг</div>
+                <div class="font-semibold">
+                  {formatTime(row.start_at)}
+                  {row.end_at ? `–${formatTime(row.end_at)}` : ""}
+                </div>
+              </div>
+              {row.location && (
+                <div class="col-span-2">
+                  <div class="text-gray-400">Байршил</div>
+                  <div class="font-semibold truncate">📍 {row.location}</div>
+                </div>
+              )}
+            </div>
+
+            <div class="flex gap-2 pt-2 border-t border-gray-100">
+              <button
+                type="button"
+                class="flex-1 bg-white border border-rose-300 text-rose-600 text-xs font-bold py-2 rounded-lg active:opacity-80 disabled:opacity-50"
+                data-action="delete"
+                data-id={String(row.id)}
+                data-title={row.title}
+              >
+                Устгах
+              </button>
+            </div>
+          </article>
+        );
+      })
+    }
+  </section>
+  </div>
+</AdminLayout>
+
+<script>
+  document.querySelectorAll<HTMLButtonElement>('[data-action="delete"]').forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const id = btn.dataset.id;
+      const title = btn.dataset.title ?? "";
+      if (!id) return;
+      if (!window.confirm(`"${title}" арга хэмжээг устгах уу?`)) return;
+      btn.disabled = true;
+      try {
+        const res = await fetch(`/api/events/${id}`, {
+          method: "DELETE",
+          credentials: "same-origin",
+        });
+        if (res.ok) {
+          window.location.reload();
+        } else {
+          const data = (await res.json().catch(() => ({}))) as { error?: string };
+          alert(data.error ?? "Алдаа гарлаа");
+          btn.disabled = false;
+        }
+      } catch {
+        alert("Сүлжээний алдаа");
+        btn.disabled = false;
+      }
+    });
+  });
+</script>

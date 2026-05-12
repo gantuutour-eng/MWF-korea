@@ -1,0 +1,221 @@
+---
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+import { listAllMembershipPayments } from "../../../lib/db";
+import { loadAdmin } from "../../../lib/adminAuth";
+import { formatTugrik, getPlan } from "../../../lib/membership";
+
+const env = Astro.locals.runtime.env;
+const me = await loadAdmin(
+  env.DB,
+  env.SESSIONS,
+  Astro.request.headers.get("cookie"),
+);
+if (!me) return Astro.redirect("/profile/login?next=/admin/payments");
+
+const filter = Astro.url.searchParams.get("status");
+const validFilter =
+  filter === "pending" || filter === "confirmed" || filter === "rejected"
+    ? filter
+    : undefined;
+
+const rows = await listAllMembershipPayments(env.DB, validFilter);
+
+const tabs = [
+  { key: "all", label: "Бүгд", href: "/admin/payments" },
+  { key: "pending", label: "Хүлээгдэж буй", href: "/admin/payments?status=pending" },
+  { key: "confirmed", label: "Баталгаажсан", href: "/admin/payments?status=confirmed" },
+  { key: "rejected", label: "Татгалзсан", href: "/admin/payments?status=rejected" },
+];
+const activeTab = validFilter ?? "all";
+
+function fmtDateTime(unix: number): string {
+  const d = new Date(unix * 1000);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+const statusBadge: Record<string, string> = {
+  pending: "bg-mwa-burgundy/10 text-mwa-burgundy",
+  confirmed: "bg-emerald-50 text-emerald-700",
+  rejected: "bg-rose-50 text-rose-600",
+};
+const statusLabel: Record<string, string> = {
+  pending: "Хүлээгдэж буй",
+  confirmed: "Баталгаажсан",
+  rejected: "Татгалзсан",
+};
+---
+
+<AdminLayout title="Төлбөрийн удирдлага" active="payments">
+  <header
+    class="lg:hidden px-3 pt-6 pb-3 flex items-center bg-white border-b border-gray-100 sticky top-0 z-20"
+    data-purpose="admin-payments-header"
+  >
+    <a href="/admin" aria-label="Буцах" class="p-2">
+      <svg
+        class="h-6 w-6 text-mwa-text-primary"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          d="M15 19l-7-7 7-7"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"></path>
+      </svg>
+    </a>
+    <h1 class="flex-1 text-center text-lg font-bold">Төлбөрийн удирдлага</h1>
+    <div class="w-10"></div>
+  </header>
+
+  <div class="max-w-6xl mx-auto lg:px-8 lg:py-8">
+    <h1 class="hidden lg:block text-2xl font-extrabold mb-6">Төлбөрийн удирдлага</h1>
+
+  <nav class="px-5 lg:px-0 border-b border-gray-100 flex items-center gap-1 overflow-x-auto">
+    {
+      tabs.map((t) => {
+        const active = t.key === activeTab;
+        return (
+          <a
+            href={t.href}
+            class={`shrink-0 py-3 px-3 text-sm font-semibold relative ${
+              active ? "text-mwa-burgundy" : "text-gray-400"
+            }`}
+          >
+            {t.label}
+            {active && (
+              <span class="absolute bottom-0 left-2 right-2 h-[3px] bg-mwa-burgundy rounded-t-full" />
+            )}
+          </a>
+        );
+      })
+    }
+  </nav>
+
+  <section class="px-5 lg:px-0 pt-4 pb-10 lg:grid lg:grid-cols-2 lg:gap-3 space-y-3 lg:space-y-0" data-purpose="payments-list">
+    {
+      rows.length === 0 && (
+        <div class="text-center py-12 text-gray-400 text-sm">
+          Тохирох захиалга алга байна.
+        </div>
+      )
+    }
+    {
+      rows.map((p) => {
+        const plan = getPlan(p.plan_id);
+        return (
+          <article
+            class="bg-white border border-gray-100 rounded-2xl shadow-sm p-4"
+            data-payment-id={p.id}
+          >
+            <div class="flex items-start justify-between gap-2 mb-2">
+              <div class="min-w-0">
+                <div class="text-[11px] text-gray-400 font-mono">
+                  {p.reference}
+                </div>
+                <div class="font-bold text-sm leading-tight">
+                  {plan?.label ?? p.plan_id}
+                </div>
+              </div>
+              <span
+                class={`text-[10px] font-bold px-2 py-1 rounded-full whitespace-nowrap ${statusBadge[p.status]}`}
+              >
+                {statusLabel[p.status]}
+              </span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 text-xs mb-3">
+              <div>
+                <div class="text-gray-400">Дүн</div>
+                <div class="font-bold text-mwa-burgundy">
+                  {formatTugrik(p.amount)}
+                </div>
+              </div>
+              <div>
+                <div class="text-gray-400">Үүсгэсэн</div>
+                <div class="font-semibold">{fmtDateTime(p.created_at)}</div>
+              </div>
+              <div class="col-span-2">
+                <div class="text-gray-400">Гүйлгээний утга</div>
+                <div class="font-bold">
+                  {p.customer_memo ?? (
+                    <span class="text-gray-400 font-normal">
+                      (хэрэглэгч нэрээ оруулаагүй)
+                    </span>
+                  )}
+                </div>
+              </div>
+              {p.status === "confirmed" && p.ends_at && (
+                <div class="col-span-2">
+                  <div class="text-gray-400">Хүчинтэй хүртэл</div>
+                  <div class="font-semibold">{fmtDateTime(p.ends_at)}</div>
+                </div>
+              )}
+            </div>
+
+            {p.status === "pending" && (
+              <div class="flex gap-2 pt-3 border-t border-gray-100">
+                <button
+                  type="button"
+                  class="flex-1 bg-emerald-600 text-white text-xs font-bold py-2.5 rounded-xl active:opacity-80 disabled:opacity-50"
+                  data-action="confirm"
+                  data-id={String(p.id)}
+                >
+                  Баталгаажуулах
+                </button>
+                <button
+                  type="button"
+                  class="flex-1 bg-white border border-rose-300 text-rose-600 text-xs font-bold py-2.5 rounded-xl active:opacity-80 disabled:opacity-50"
+                  data-action="reject"
+                  data-id={String(p.id)}
+                >
+                  Татгалзах
+                </button>
+              </div>
+            )}
+          </article>
+        );
+      })
+    }
+  </section>
+  </div>
+</AdminLayout>
+
+<script>
+  document
+    .querySelectorAll<HTMLButtonElement>("[data-action]")
+    .forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const id = btn.dataset.id;
+        const action = btn.dataset.action;
+        if (!id || !action) return;
+        const confirmMsg =
+          action === "confirm"
+            ? "Энэ төлбөрийг баталгаажуулах уу?"
+            : "Энэ төлбөрийг татгалзах уу?";
+        if (!window.confirm(confirmMsg)) return;
+        btn.disabled = true;
+        try {
+          const res = await fetch(`/api/admin/payments/${id}`, {
+            method: "POST",
+            credentials: "same-origin",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ action }),
+          });
+          if (res.ok) {
+            window.location.reload();
+          } else {
+            const data = (await res.json().catch(() => ({}))) as {
+              error?: string;
+            };
+            alert(data.error ?? "Алдаа гарлаа");
+            btn.disabled = false;
+          }
+        } catch {
+          alert("Сүлжээний алдаа");
+          btn.disabled = false;
+        }
+      });
+    });
+</script>

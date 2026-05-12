@@ -1,0 +1,27 @@
+---
+interface Props {
+  href: string;
+  label: string;
+  iconSrc: string;
+  iconAlt?: string;
+}
+
+const { href, label, iconSrc, iconAlt = "" } = Astro.props;
+---
+
+<a href={href} class="grid-card flex flex-col items-center text-center">
+  <div
+    class="grid-tile w-full aspect-square bg-gray-100 rounded-[22px] flex items-center justify-center mb-2 overflow-hidden"
+  >
+    <img
+      src={iconSrc}
+      alt={iconAlt}
+      loading="lazy"
+      class="w-3/5 h-3/5 object-contain"
+    />
+  </div>
+  <span
+    class="text-[13px] font-medium leading-tight text-mwa-text-primary"
+    set:html={label}
+  />
+</a>

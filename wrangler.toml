@@ -1,0 +1,24 @@
+name = "mwa-korea"
+compatibility_date = "2026-05-01"
+compatibility_flags = ["nodejs_compat"]
+pages_build_output_dir = "./dist"
+
+# D1 database — run `wrangler d1 create mwa-korea-db` and paste the returned id below
+[[d1_databases]]
+binding = "DB"
+database_name = "mwa-korea-db"
+database_id = "REPLACE_WITH_D1_ID"
+
+# KV namespace — run `wrangler kv namespace create SESSIONS` and paste the id below
+[[kv_namespaces]]
+binding = "SESSIONS"
+id = "REPLACE_WITH_KV_ID"
+
+# R2 bucket — run `wrangler r2 bucket create mwa-korea-media` once before deploying.
+# Local dev uses miniflare's R2 simulator automatically (no setup needed).
+[[r2_buckets]]
+binding = "MEDIA"
+bucket_name = "mwa-korea-media"
+
+[vars]
+SESSION_COOKIE_NAME = "mwa_session"

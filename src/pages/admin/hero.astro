@@ -1,0 +1,379 @@
+---
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import { loadAdmin } from "../../lib/adminAuth";
+import { listHeroSlides } from "../../lib/db";
+
+const env = Astro.locals.runtime.env;
+const me = await loadAdmin(env.DB, env.SESSIONS, Astro.request.headers.get("cookie"));
+if (!me) return Astro.redirect("/profile/login?next=/admin/hero");
+
+const slides = await listHeroSlides(env.DB);
+---
+
+<AdminLayout title="Үндсэн хуудасны баннер" active="hero">
+  <header
+    class="lg:hidden px-3 pt-6 pb-3 flex items-center bg-white border-b border-gray-100 sticky top-0 z-20"
+  >
+    <a href="/admin" aria-label="Буцах" class="p-2">
+      <svg
+        class="h-6 w-6 text-mwa-text-primary"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          d="M15 19l-7-7 7-7"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"></path>
+      </svg>
+    </a>
+    <h1 class="flex-1 text-center text-lg font-bold">Хийрх баннер</h1>
+    <a href="/" class="text-xs text-mwa-burgundy font-bold p-2">Харах</a>
+  </header>
+
+  <div class="max-w-4xl mx-auto lg:px-8 lg:py-8">
+    <div class="hidden lg:flex items-center justify-between mb-6">
+      <div>
+        <h1 class="text-2xl font-extrabold">Үндсэн хуудасны баннер</h1>
+        <p class="text-sm text-gray-500 mt-1">
+          Нүүр хуудасны дээд хэсэгт гарах слайдуудыг удирдах
+        </p>
+      </div>
+      <a
+        href="/"
+        class="text-sm text-mwa-burgundy font-bold hover:underline"
+      >
+        Урьдчилан харах →
+      </a>
+    </div>
+
+    <section class="px-5 lg:px-0 mb-8" data-purpose="slides-list">
+      <h2 class="font-bold text-base mb-3">
+        Одоогийн слайдууд
+        <span class="text-xs text-gray-400 font-normal">({slides.length})</span>
+      </h2>
+
+      {
+        slides.length === 0 && (
+          <div class="text-center py-10 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-200 text-sm text-gray-400">
+            Хоосон байна. Доороос анхны слайдаа нэмнэ үү.
+            <div class="text-[11px] mt-1">
+              Слайд хоосон үед нүүр хуудсанд тогтсон үндсэн (burgundy) дизайн
+              харагдана.
+            </div>
+          </div>
+        )
+      }
+
+      <div class="space-y-2 lg:grid lg:grid-cols-2 lg:gap-3 lg:space-y-0">
+        {
+          slides.map((s) => (
+            <article
+              class="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden"
+              data-slide-id={s.id}
+            >
+              <div class="relative aspect-[16/8] bg-mwa-burgundy">
+                {s.image_url && (
+                  <img
+                    src={s.image_url}
+                    alt=""
+                    class="absolute inset-0 w-full h-full object-cover"
+                  />
+                )}
+                {s.image_url && (
+                  <div class="absolute inset-0 bg-gradient-to-br from-black/50 via-black/20 to-black/50" />
+                )}
+                <div class="absolute inset-0 p-4 flex flex-col justify-center text-white">
+                  <h3
+                    class="font-extrabold text-base leading-tight line-clamp-2"
+                    set:html={s.title}
+                  />
+                  {s.subtitle && (
+                    <p
+                      class="text-xs opacity-90 mt-1 line-clamp-2"
+                      set:html={s.subtitle}
+                    />
+                  )}
+                </div>
+                <span class="absolute top-2 right-2 text-[10px] font-mono bg-white/85 text-mwa-text-primary rounded px-1.5 py-0.5">
+                  #{s.sort_order}
+                </span>
+              </div>
+              <div class="p-3 flex items-center justify-between gap-2 text-xs">
+                <div class="min-w-0 flex-1">
+                  {s.href ? (
+                    <span class="text-gray-500 font-mono truncate block">
+                      → {s.href}
+                    </span>
+                  ) : (
+                    <span class="text-gray-400">холбоосгүй</span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  class="text-rose-600 font-bold px-3 py-1.5 rounded-lg border border-rose-200 active:bg-rose-50 disabled:opacity-50 shrink-0"
+                  data-action="delete"
+                  data-id={String(s.id)}
+                  data-title={s.title.replace(/<br\/?>/gi, " ")}
+                >
+                  Устгах
+                </button>
+              </div>
+            </article>
+          ))
+        }
+      </div>
+    </section>
+
+    <section class="px-5 lg:px-0 mb-10" data-purpose="add-form">
+      <h2 class="font-bold text-base mb-3">Шинэ слайд нэмэх</h2>
+
+      <form
+        id="hero-form"
+        class="bg-white border border-gray-100 rounded-2xl p-4 lg:p-6 space-y-4 shadow-sm"
+        enctype="multipart/form-data"
+        onsubmit="return false"
+      >
+        <div>
+          <label class="text-xs font-bold text-mwa-text-secondary mb-1.5 block">
+            Зураг (заавал биш — оруулаагүй бол burgundy үндсэн дизайн)
+          </label>
+          <div
+            class="border-2 border-dashed border-gray-200 rounded-xl p-4 text-center"
+            data-purpose="dropzone"
+          >
+            <input
+              type="file"
+              name="image"
+              accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml"
+              class="hidden"
+              data-image-input
+            />
+            <div data-empty-state>
+              <svg
+                class="w-10 h-10 mx-auto text-gray-300 mb-2"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                />
+              </svg>
+              <button
+                type="button"
+                class="text-sm font-bold text-mwa-burgundy"
+                data-pick-image
+              >
+                Зураг сонгох
+              </button>
+              <p class="text-[11px] text-gray-400 mt-1">
+                PNG, JPG, WebP, GIF, SVG · 5MB хүртэл · 16:9 хэмжээ зөвлөмжтэй
+              </p>
+            </div>
+            <div class="hidden" data-preview-state>
+              <div
+                class="aspect-[16/9] rounded-lg overflow-hidden bg-gray-100 mb-2"
+              >
+                <img
+                  data-preview-img
+                  alt=""
+                  class="w-full h-full object-cover"
+                />
+              </div>
+              <div class="flex items-center justify-between text-xs">
+                <span class="font-mono truncate" data-preview-name />
+                <button
+                  type="button"
+                  class="text-rose-600 font-bold"
+                  data-clear-image
+                >
+                  Цэвэрлэх
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label class="text-xs font-bold text-mwa-text-secondary mb-1.5 block">
+            Гарчиг <span class="text-rose-500">*</span>
+          </label>
+          <input
+            name="title"
+            type="text"
+            required
+            maxlength="200"
+            placeholder="Жнь: Эвлэлдэн нэгдэж&lt;br/&gt;Ирээдүйг бүтээе"
+            class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-mwa-burgundy"
+          />
+          <p class="text-[10px] text-gray-400 mt-1">
+            Мөр шилжүүлэхдээ <code class="font-mono">&lt;br/&gt;</code> ашиглана
+          </p>
+        </div>
+
+        <div>
+          <label class="text-xs font-bold text-mwa-text-secondary mb-1.5 block">
+            Дэд гарчиг
+          </label>
+          <input
+            name="subtitle"
+            type="text"
+            maxlength="300"
+            placeholder="Жнь: 1924 оноос эхтэй&lt;br/&gt;бидний түүх"
+            class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-mwa-burgundy"
+          />
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-3">
+          <div>
+            <label class="text-xs font-bold text-mwa-text-secondary mb-1.5 block">
+              Дарахад очих холбоос
+            </label>
+            <input
+              name="href"
+              type="text"
+              placeholder="/membership эсвэл https://..."
+              class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-mwa-burgundy font-mono"
+            />
+          </div>
+          <div>
+            <label class="text-xs font-bold text-mwa-text-secondary mb-1.5 block">
+              Эрэмбэ
+            </label>
+            <input
+              name="sort_order"
+              type="number"
+              value="100"
+              min="0"
+              class="w-24 bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-mwa-burgundy"
+            />
+          </div>
+        </div>
+
+        <p id="hero-error" class="text-sm text-rose-500 text-center hidden" />
+        <p id="hero-success" class="text-sm text-emerald-600 text-center hidden" />
+
+        <button
+          type="submit"
+          class="w-full lg:w-auto lg:px-8 bg-mwa-burgundy text-white font-bold py-3 rounded-xl text-sm active:opacity-80 disabled:opacity-50"
+        >
+          Слайд нэмэх
+        </button>
+      </form>
+    </section>
+  </div>
+</AdminLayout>
+
+<script>
+  interface ApiResponse {
+    ok?: boolean;
+    id?: number;
+    error?: string;
+  }
+
+  // ---------- Image picker / preview ----------
+  const imageInput = document.querySelector<HTMLInputElement>(
+    "[data-image-input]",
+  );
+  const pickBtn = document.querySelector<HTMLButtonElement>("[data-pick-image]");
+  const clearBtn = document.querySelector<HTMLButtonElement>("[data-clear-image]");
+  const emptyState = document.querySelector<HTMLElement>("[data-empty-state]");
+  const previewState = document.querySelector<HTMLElement>("[data-preview-state]");
+  const previewImg = document.querySelector<HTMLImageElement>("[data-preview-img]");
+  const previewName = document.querySelector<HTMLElement>("[data-preview-name]");
+
+  pickBtn?.addEventListener("click", () => imageInput?.click());
+
+  imageInput?.addEventListener("change", () => {
+    const file = imageInput.files?.[0];
+    if (!file) return;
+    if (!previewImg || !previewName || !emptyState || !previewState) return;
+    previewImg.src = URL.createObjectURL(file);
+    previewName.textContent = `${file.name} (${(file.size / 1024).toFixed(0)} KB)`;
+    emptyState.classList.add("hidden");
+    previewState.classList.remove("hidden");
+  });
+
+  clearBtn?.addEventListener("click", () => {
+    if (!imageInput || !emptyState || !previewState || !previewImg) return;
+    imageInput.value = "";
+    previewImg.src = "";
+    emptyState.classList.remove("hidden");
+    previewState.classList.add("hidden");
+  });
+
+  // ---------- Submit ----------
+  const form = document.getElementById("hero-form") as HTMLFormElement | null;
+  const errorEl = document.getElementById("hero-error");
+  const successEl = document.getElementById("hero-success");
+
+  form?.addEventListener("submit", async () => {
+    if (!form || !errorEl || !successEl) return;
+    errorEl.classList.add("hidden");
+    successEl.classList.add("hidden");
+
+    const submitBtn = form.querySelector<HTMLButtonElement>(
+      "button[type='submit']",
+    );
+    if (submitBtn) submitBtn.disabled = true;
+
+    try {
+      const fd = new FormData(form);
+      const res = await fetch("/api/hero-slides", {
+        method: "POST",
+        credentials: "same-origin",
+        body: fd,
+      });
+      const body = (await res.json().catch(() => ({}))) as ApiResponse;
+      if (res.ok && body.ok) {
+        successEl.textContent = `Амжилттай нэмэгдлээ (id: ${body.id})`;
+        successEl.classList.remove("hidden");
+        window.setTimeout(() => window.location.reload(), 700);
+      } else {
+        errorEl.textContent = body.error ?? "Алдаа гарлаа";
+        errorEl.classList.remove("hidden");
+        if (submitBtn) submitBtn.disabled = false;
+      }
+    } catch {
+      errorEl.textContent = "Сүлжээний алдаа";
+      errorEl.classList.remove("hidden");
+      if (submitBtn) submitBtn.disabled = false;
+    }
+  });
+
+  // ---------- Delete ----------
+  document
+    .querySelectorAll<HTMLButtonElement>('[data-action="delete"]')
+    .forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const id = btn.dataset.id;
+        const title = btn.dataset.title ?? "";
+        if (!id) return;
+        if (!window.confirm(`"${title}" слайдыг устгах уу?`)) return;
+        btn.disabled = true;
+        try {
+          const res = await fetch(`/api/hero-slides/${id}`, {
+            method: "DELETE",
+            credentials: "same-origin",
+          });
+          if (res.ok) {
+            window.location.reload();
+          } else {
+            const data = (await res.json().catch(() => ({}))) as {
+              error?: string;
+            };
+            alert(data.error ?? "Алдаа гарлаа");
+            btn.disabled = false;
+          }
+        } catch {
+          alert("Сүлжээний алдаа");
+          btn.disabled = false;
+        }
+      });
+    });
+</script>

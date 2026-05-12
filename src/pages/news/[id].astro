@@ -1,0 +1,173 @@
+---
+import AppLayout from "../../layouts/AppLayout.astro";
+import NewsCarousel from "../../components/NewsCarousel.astro";
+import { getNews, listNews } from "../../lib/db";
+
+const id = Number(Astro.params.id);
+let row = null;
+if (Number.isFinite(id)) {
+  row = await getNews(Astro.locals.runtime.env.DB, id);
+}
+
+if (!row) {
+  return Astro.redirect("/news");
+}
+
+const related = await listNews(Astro.locals.runtime.env.DB, {
+  limit: 5,
+  excludeId: row.id,
+});
+---
+
+<AppLayout title={row.title} activeTab="news" showHeader={false}>
+  <header class="px-3 pt-6 pb-2 flex items-center" data-purpose="detail-header">
+    <a
+      href="/news"
+      aria-label="Буцах"
+      class="p-2"
+    >
+      <svg
+        class="h-6 w-6 text-mwa-text-primary"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          d="M15 19l-7-7 7-7"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"></path>
+      </svg>
+    </a>
+  </header>
+
+  <article class="pb-10" data-purpose="article">
+    <h1 class="px-5 text-[26px] font-extrabold leading-tight text-blue-800 mb-4">
+      {row.title}
+    </h1>
+
+    {
+      row.cover_url && (
+        <div class="px-5">
+          <div class="rounded-2xl overflow-hidden bg-gray-100 aspect-[16/9]">
+            <img
+              src={row.cover_url}
+              alt=""
+              class="w-full h-full object-cover"
+            />
+          </div>
+        </div>
+      )
+    }
+
+    <div
+      class="px-5 mt-4 flex items-center justify-end gap-5 text-gray-500"
+      data-purpose="article-actions"
+    >
+      <button
+        type="button"
+        aria-label="Share"
+        class="p-1 active:opacity-60"
+        data-action="share"
+        data-share-title={row.title}
+      >
+        <svg
+          class="w-6 h-6"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            d="M8 12a4 4 0 11-8 0 4 4 0 018 0zm12-6a4 4 0 11-8 0 4 4 0 018 0zm0 12a4 4 0 11-8 0 4 4 0 018 0z"
+            opacity="0"></path>
+          <path
+            d="M4 12v.01M4 12c0-1.105.895-2 2-2s2 .895 2 2-.895 2-2 2-2-.895-2-2zM15 8l-7 4m0 0l7 4M8 12c0 1.105-.895 2-2 2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"></path>
+        </svg>
+      </button>
+      <button
+        type="button"
+        aria-label="Like"
+        class="flex items-center gap-1 p-1 active:opacity-60"
+        data-action="like"
+      >
+        <svg
+          class="w-6 h-6"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"></path>
+        </svg>
+        <span class="text-sm font-semibold tabular-nums" data-like-count>1</span>
+      </button>
+    </div>
+
+    {
+      row.subtitle && (
+        <h2 class="px-5 mt-6 text-lg font-bold leading-snug text-mwa-text-primary">
+          {row.subtitle}
+        </h2>
+      )
+    }
+
+    <div
+      class="px-5 mt-4 text-[15px] leading-relaxed text-mwa-text-secondary whitespace-pre-line"
+    >
+      {row.body}
+    </div>
+  </article>
+
+  {
+    related.length > 0 && (
+      <NewsCarousel items={related} heading="Дараагийн мэдээ" />
+    )
+  }
+</AppLayout>
+
+<script>
+  document
+    .querySelectorAll<HTMLButtonElement>('[data-action="share"]')
+    .forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const title = btn.dataset.shareTitle ?? document.title;
+        const url = window.location.href;
+        if (navigator.share) {
+          try {
+            await navigator.share({ title, url });
+          } catch {
+            // user cancelled
+          }
+        } else if (navigator.clipboard) {
+          try {
+            await navigator.clipboard.writeText(url);
+            btn.setAttribute("aria-label", "Copied");
+          } catch {
+            // ignore
+          }
+        }
+      });
+    });
+
+  document
+    .querySelectorAll<HTMLButtonElement>('[data-action="like"]')
+    .forEach((btn) => {
+      const countEl = btn.querySelector<HTMLSpanElement>("[data-like-count]");
+      let liked = false;
+      btn.addEventListener("click", () => {
+        liked = !liked;
+        if (countEl) {
+          const current = Number(countEl.textContent ?? "0");
+          countEl.textContent = String(liked ? current + 1 : Math.max(0, current - 1));
+        }
+        btn.classList.toggle("text-red-500", liked);
+        btn.classList.toggle("text-gray-500", !liked);
+      });
+    });
+</script>

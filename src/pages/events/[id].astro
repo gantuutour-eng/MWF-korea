@@ -1,0 +1,231 @@
+---
+import AppLayout from "../../layouts/AppLayout.astro";
+import { getEvent } from "../../lib/db";
+import { styleFor, formatDate, formatTime } from "../../lib/eventStyles";
+
+const id = Number(Astro.params.id);
+let row = null;
+if (Number.isFinite(id)) {
+  row = await getEvent(Astro.locals.runtime.env.DB, id);
+}
+
+if (!row) {
+  return Astro.redirect("/events");
+}
+
+const style = styleFor(row.type);
+const startDate = new Date(row.start_at * 1000);
+const endDate = row.end_at ? new Date(row.end_at * 1000) : null;
+const weekdayLabels = ["Ня", "Да", "Мя", "Лх", "Пү", "Ба", "Бя"];
+const startWeekday = weekdayLabels[startDate.getDay()];
+const dateLine = `${formatDate(row.start_at)} (${startWeekday})`;
+const timeLine = endDate
+  ? `${formatTime(row.start_at)} – ${formatTime(row.end_at!)}`
+  : formatTime(row.start_at);
+---
+
+<AppLayout
+  title={row.title}
+  activeTab="events"
+  showHeader={false}
+  showBottomNav={false}
+>
+  <header
+    class="px-3 pt-6 pb-2 flex items-center justify-between"
+    data-purpose="detail-header"
+  >
+    <a href="/events" aria-label="Буцах" class="p-2">
+      <svg
+        class="h-6 w-6 text-mwa-text-primary"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          d="M15 19l-7-7 7-7"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"></path>
+      </svg>
+    </a>
+    <div class="flex items-center">
+      <button
+        aria-label="Хуваалцах"
+        class="p-2 text-gray-500 active:opacity-60"
+        data-action="share"
+        data-share-title={row.title}
+      >
+        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            d="M4 12v.01M4 12c0-1.105.895-2 2-2s2 .895 2 2-.895 2-2 2-2-.895-2-2zM15 8l-7 4m0 0l7 4M8 12c0 1.105-.895 2-2 2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"></path>
+        </svg>
+      </button>
+      <button
+        aria-label="Хадгалах"
+        class="p-2 text-gray-500 active:opacity-60"
+        data-action="bookmark"
+      >
+        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3-7 3V5z"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"></path>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <section class="px-5" data-purpose="detail-cover">
+    <div class="relative aspect-[16/9] rounded-2xl overflow-hidden bg-gray-100">
+      {
+        row.image_url ? (
+          <img
+            src={row.image_url}
+            alt=""
+            class="w-full h-full object-cover"
+          />
+        ) : (
+          <div class={`w-full h-full bg-gradient-to-br ${style.featuredBg}`} />
+        )
+      }
+      <span
+        class={`absolute top-3 left-3 text-[11px] font-bold px-3 py-1 rounded-full ${style.chip}`}
+      >
+        {style.label}
+      </span>
+    </div>
+  </section>
+
+  <h1 class="px-5 mt-5 text-2xl font-extrabold leading-tight">
+    {row.title}
+  </h1>
+
+  <section
+    class="px-5 mt-5 space-y-2"
+    data-purpose="detail-meta"
+  >
+    <div class="flex items-center gap-3 bg-gray-50 p-3 rounded-xl">
+      <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-base">
+        📅
+      </div>
+      <div class="flex-1">
+        <div class="text-[11px] text-gray-500">Огноо</div>
+        <div class="font-semibold text-sm">{dateLine}</div>
+      </div>
+    </div>
+    <div class="flex items-center gap-3 bg-gray-50 p-3 rounded-xl">
+      <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-base">
+        🕐
+      </div>
+      <div class="flex-1">
+        <div class="text-[11px] text-gray-500">Цаг</div>
+        <div class="font-semibold text-sm">{timeLine}</div>
+      </div>
+    </div>
+    {
+      row.location && (
+        <div class="flex items-center gap-3 bg-gray-50 p-3 rounded-xl">
+          <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center text-base">
+            📍
+          </div>
+          <div class="flex-1 min-w-0">
+            <div class="text-[11px] text-gray-500">Байршил</div>
+            <div class="font-semibold text-sm">{row.location}</div>
+          </div>
+        </div>
+      )
+    }
+  </section>
+
+  {
+    row.description && (
+      <section class="px-5 mt-6 pb-32" data-purpose="detail-body">
+        <h2 class="font-bold text-base mb-2">Дэлгэрэнгүй</h2>
+        <p class="text-sm text-gray-700 whitespace-pre-line leading-relaxed">
+          {row.description}
+        </p>
+      </section>
+    )
+  }
+
+  <div
+    class="fixed bottom-0 left-0 right-0 max-w-md mx-auto bg-white border-t border-gray-100 px-5 pt-3 pb-6 z-50"
+    data-purpose="detail-cta"
+  >
+    <button
+      type="button"
+      class="w-full bg-mwa-burgundy text-white font-bold py-3.5 rounded-2xl active:opacity-80 transition"
+      data-action="register"
+    >
+      Бүртгүүлэх
+    </button>
+  </div>
+</AppLayout>
+
+<script>
+  document
+    .querySelectorAll<HTMLButtonElement>('[data-action="share"]')
+    .forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const title = btn.dataset.shareTitle ?? document.title;
+        const url = window.location.href;
+        if (navigator.share) {
+          try {
+            await navigator.share({ title, url });
+          } catch {
+            // user cancelled
+          }
+        } else if (navigator.clipboard) {
+          try {
+            await navigator.clipboard.writeText(url);
+            btn.setAttribute("aria-label", "Хуулагдсан");
+          } catch {
+            // ignore
+          }
+        }
+      });
+    });
+
+  document
+    .querySelectorAll<HTMLButtonElement>('[data-action="bookmark"]')
+    .forEach((btn) => {
+      let bookmarked = false;
+      btn.addEventListener("click", () => {
+        bookmarked = !bookmarked;
+        btn.classList.toggle("text-mwa-burgundy", bookmarked);
+        btn.classList.toggle("text-gray-500", !bookmarked);
+      });
+    });
+
+  document
+    .querySelectorAll<HTMLButtonElement>('[data-action="register"]')
+    .forEach((btn) => {
+      let registered = false;
+      btn.addEventListener("click", () => {
+        registered = !registered;
+        if (registered) {
+          btn.textContent = "Бүртгүүлсэн ✓";
+          btn.classList.remove("bg-mwa-burgundy", "text-white");
+          btn.classList.add(
+            "bg-white",
+            "border",
+            "border-mwa-burgundy",
+            "text-mwa-burgundy",
+          );
+        } else {
+          btn.textContent = "Бүртгүүлэх";
+          btn.classList.add("bg-mwa-burgundy", "text-white");
+          btn.classList.remove(
+            "bg-white",
+            "border",
+            "border-mwa-burgundy",
+            "text-mwa-burgundy",
+          );
+        }
+      });
+    });
+</script>

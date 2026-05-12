@@ -1,0 +1,292 @@
+---
+import type { ChatMessageRow } from "../lib/db";
+
+interface Props {
+  /** Initial messages rendered server-side (already in chronological order). */
+  initialMessages: ChatMessageRow[];
+  /** Viewer's user id — used to align own messages right. */
+  viewerId: number;
+  /** Viewer's role — affects polling target and admin replies. */
+  viewerRole: "member" | "admin";
+  /** When viewer is admin, which user's conversation to load (omit for member). */
+  conversationUserId?: number;
+  /** Title of the other party (e.g. "Админ" or member's name). */
+  partnerName: string;
+  /** Optional avatar initial. */
+  partnerInitial?: string;
+  /** Where the back arrow goes. */
+  backHref: string;
+}
+
+const {
+  initialMessages,
+  viewerId,
+  viewerRole,
+  conversationUserId,
+  partnerName,
+  partnerInitial,
+  backHref,
+} = Astro.props;
+
+const initial = partnerInitial ?? partnerName.charAt(0).toUpperCase();
+const dataset = {
+  "data-viewer-id": String(viewerId),
+  "data-viewer-role": viewerRole,
+  ...(conversationUserId !== undefined
+    ? { "data-conv-user": String(conversationUserId) }
+    : {}),
+};
+
+function fmtTime(unix: number): string {
+  const d = new Date(unix * 1000);
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
+
+const lastId = initialMessages.at(-1)?.id ?? 0;
+---
+
+<div
+  class="flex flex-col min-h-[calc(100vh-64px)]"
+  data-chat-root
+  {...dataset}
+  data-last-id={String(lastId)}
+>
+  <header
+    class="px-3 pt-6 pb-3 flex items-center gap-2 border-b border-gray-100"
+    data-purpose="chat-header"
+  >
+    <a href={backHref} aria-label="Буцах" class="p-2">
+      <svg
+        class="h-6 w-6 text-mwa-text-primary"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          d="M15 19l-7-7 7-7"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"></path>
+      </svg>
+    </a>
+    <div
+      class="w-10 h-10 rounded-full bg-mwa-burgundy text-white flex items-center justify-center font-bold"
+    >
+      {initial}
+    </div>
+    <div class="flex-1 min-w-0">
+      <div class="font-bold text-sm leading-tight">{partnerName}</div>
+      <div class="text-[11px] text-gray-400">Онлайн дэмжлэг</div>
+    </div>
+  </header>
+
+  <div
+    class="flex-1 overflow-y-auto px-4 py-4 space-y-3"
+    data-chat-list
+  >
+    {
+      initialMessages.length === 0 && (
+        <div class="text-center py-12 text-gray-400 text-sm">
+          {viewerRole === "admin"
+            ? "Энэ хэрэглэгчтэй зурвас солилцоогүй байна."
+            : "Сайн байна уу 👋 Бидэнтэй холбоо барих эхний зурвасаа бичээрэй."}
+        </div>
+      )
+    }
+    {
+      initialMessages.map((m) => {
+        const mine = m.author_id === viewerId;
+        return (
+          <div
+            class={`flex ${mine ? "justify-end" : "justify-start"}`}
+            data-msg-id={String(m.id)}
+          >
+            <div class="max-w-[78%]">
+              <div
+                class={
+                  mine
+                    ? "bg-mwa-burgundy text-white rounded-2xl rounded-br-md px-4 py-2 whitespace-pre-line text-sm leading-relaxed"
+                    : "bg-gray-100 text-mwa-text-primary rounded-2xl rounded-bl-md px-4 py-2 whitespace-pre-line text-sm leading-relaxed"
+                }
+              >
+                {m.body}
+              </div>
+              <div
+                class={`text-[10px] text-gray-400 mt-1 ${mine ? "text-right" : "text-left"}`}
+              >
+                {fmtTime(m.created_at)}
+              </div>
+            </div>
+          </div>
+        );
+      })
+    }
+  </div>
+
+  <form
+    class="sticky bottom-0 bg-white border-t border-gray-100 px-3 py-3 flex items-end gap-2"
+    data-chat-form
+    onsubmit="return false"
+  >
+    <textarea
+      name="body"
+      rows="1"
+      placeholder="Зурвас бичих..."
+      required
+      maxlength="2000"
+      class="flex-1 resize-none rounded-2xl bg-gray-50 border border-gray-200 px-4 py-2.5 text-sm focus:outline-none focus:border-mwa-burgundy max-h-32"
+      data-chat-input></textarea>
+    <button
+      type="submit"
+      aria-label="Илгээх"
+      class="w-11 h-11 shrink-0 rounded-full bg-mwa-burgundy text-white flex items-center justify-center active:opacity-80 disabled:opacity-40"
+      data-chat-send
+    >
+      <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M2 21l21-9L2 3v7l15 2-15 2v7z"></path>
+      </svg>
+    </button>
+  </form>
+</div>
+
+<script>
+  type Msg = {
+    id: number;
+    user_id: number;
+    author_id: number;
+    author_role: "member" | "admin";
+    body: string;
+    created_at: number;
+    read_at: number | null;
+  };
+
+  const root = document.querySelector<HTMLElement>("[data-chat-root]");
+  if (root) {
+    const list = root.querySelector<HTMLElement>("[data-chat-list]")!;
+    const form = root.querySelector<HTMLFormElement>("[data-chat-form]")!;
+    const input = root.querySelector<HTMLTextAreaElement>("[data-chat-input]")!;
+    const send = root.querySelector<HTMLButtonElement>("[data-chat-send]")!;
+    const viewerId = Number(root.dataset.viewerId);
+    const viewerRole = (root.dataset.viewerRole as "member" | "admin") ?? "member";
+    const convUser = root.dataset.convUser ? Number(root.dataset.convUser) : undefined;
+    let lastId = Number(root.dataset.lastId ?? "0");
+    let pollTimer: number | null = null;
+    let emptyHintEl: Element | null = null;
+
+    const fetchUrl = (after = 0) => {
+      const params = new URLSearchParams();
+      if (after > 0) params.set("after", String(after));
+      if (viewerRole === "admin" && convUser !== undefined)
+        params.set("user_id", String(convUser));
+      const qs = params.toString();
+      return `/api/chat/messages${qs ? `?${qs}` : ""}`;
+    };
+
+    const scrollBottom = () => {
+      list.scrollTop = list.scrollHeight;
+    };
+
+    const fmtTime = (unix: number) => {
+      const d = new Date(unix * 1000);
+      return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+    };
+
+    const appendMessage = (m: Msg) => {
+      if (!emptyHintEl) {
+        emptyHintEl = list.querySelector(".text-gray-400.text-sm")?.parentElement ?? null;
+      }
+      if (emptyHintEl && emptyHintEl.classList.contains("text-center")) {
+        emptyHintEl.remove();
+        emptyHintEl = null;
+      }
+      const mine = m.author_id === viewerId;
+      const wrap = document.createElement("div");
+      wrap.className = `flex ${mine ? "justify-end" : "justify-start"}`;
+      wrap.dataset.msgId = String(m.id);
+      wrap.innerHTML = `
+        <div class="max-w-[78%]">
+          <div class="${
+            mine
+              ? "bg-mwa-burgundy text-white rounded-2xl rounded-br-md px-4 py-2 whitespace-pre-line text-sm leading-relaxed"
+              : "bg-gray-100 text-mwa-text-primary rounded-2xl rounded-bl-md px-4 py-2 whitespace-pre-line text-sm leading-relaxed"
+          }"></div>
+          <div class="text-[10px] text-gray-400 mt-1 ${mine ? "text-right" : "text-left"}">${fmtTime(m.created_at)}</div>
+        </div>
+      `;
+      wrap.querySelector("div > div")!.textContent = m.body;
+      list.appendChild(wrap);
+      if (m.id > lastId) lastId = m.id;
+    };
+
+    const poll = async () => {
+      try {
+        const res = await fetch(fetchUrl(lastId), { credentials: "same-origin" });
+        if (!res.ok) return;
+        const data = (await res.json()) as { messages: Msg[] };
+        if (!data.messages?.length) return;
+        for (const m of data.messages) appendMessage(m);
+        scrollBottom();
+      } catch {
+        // ignore transient errors
+      }
+    };
+
+    const startPolling = () => {
+      if (pollTimer !== null) return;
+      pollTimer = window.setInterval(poll, 3000);
+    };
+    const stopPolling = () => {
+      if (pollTimer !== null) {
+        clearInterval(pollTimer);
+        pollTimer = null;
+      }
+    };
+
+    form.addEventListener("submit", async () => {
+      const body = input.value.trim();
+      if (!body) return;
+      send.disabled = true;
+      try {
+        const payload: { body: string; user_id?: number } = { body };
+        if (viewerRole === "admin" && convUser !== undefined)
+          payload.user_id = convUser;
+        const res = await fetch("/api/chat/messages", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (res.ok) {
+          input.value = "";
+          input.style.height = "";
+          await poll();
+        } else {
+          const err = (await res.json().catch(() => ({}))) as { error?: string };
+          alert(err.error ?? "Зурвас илгээх амжилтгүй боллоо");
+        }
+      } finally {
+        send.disabled = false;
+        input.focus();
+      }
+    });
+
+    input.addEventListener("input", () => {
+      input.style.height = "auto";
+      input.style.height = `${Math.min(input.scrollHeight, 128)}px`;
+    });
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) {
+        e.preventDefault();
+        form.requestSubmit();
+      }
+    });
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.hidden) stopPolling();
+      else startPolling();
+    });
+
+    scrollBottom();
+    startPolling();
+  }
+</script>

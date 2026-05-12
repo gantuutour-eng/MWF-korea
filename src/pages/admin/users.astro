@@ -1,0 +1,224 @@
+---
+import AdminLayout from "../../layouts/AdminLayout.astro";
+import { loadAdmin } from "../../lib/adminAuth";
+import { listAllUsers } from "../../lib/db";
+import { getPlan } from "../../lib/membership";
+
+const env = Astro.locals.runtime.env;
+const me = await loadAdmin(
+  env.DB,
+  env.SESSIONS,
+  Astro.request.headers.get("cookie"),
+);
+if (!me) return Astro.redirect("/profile/login?next=/admin/users");
+
+const roleFilter = Astro.url.searchParams.get("role");
+const allUsers = await listAllUsers(env.DB);
+const users =
+  roleFilter === "admin"
+    ? allUsers.filter((u) => u.role === "admin")
+    : roleFilter === "member"
+      ? allUsers.filter((u) => u.role === "member")
+      : allUsers;
+
+const tabs = [
+  { key: "all", label: "Бүгд", href: "/admin/users", count: allUsers.length },
+  {
+    key: "member",
+    label: "Гишүүн",
+    href: "/admin/users?role=member",
+    count: allUsers.filter((u) => u.role === "member").length,
+  },
+  {
+    key: "admin",
+    label: "Админ",
+    href: "/admin/users?role=admin",
+    count: allUsers.filter((u) => u.role === "admin").length,
+  },
+];
+const activeTab = roleFilter ?? "all";
+
+const pad = (n: number) => String(n).padStart(2, "0");
+function fmtDate(unix: number): string {
+  const d = new Date(unix * 1000);
+  return `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())}`;
+}
+---
+
+<AdminLayout title="Хэрэглэгчид" active="users">
+  <header class="lg:hidden px-3 pt-6 pb-3 flex items-center bg-white border-b border-gray-100 sticky top-0 z-20">
+    <a href="/admin" aria-label="Буцах" class="p-2">
+      <svg
+        class="h-6 w-6 text-mwa-text-primary"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          d="M15 19l-7-7 7-7"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"></path>
+      </svg>
+    </a>
+    <h1 class="flex-1 text-center text-lg font-bold">Хэрэглэгчид</h1>
+    <div class="w-10"></div>
+  </header>
+
+  <div class="max-w-6xl mx-auto lg:px-8 lg:py-8">
+    <h1 class="hidden lg:block text-2xl font-extrabold mb-6">Хэрэглэгчид</h1>
+
+  <nav class="px-5 lg:px-0 border-b border-gray-100 flex items-center gap-1">
+    {
+      tabs.map((t) => {
+        const active = t.key === activeTab;
+        return (
+          <a
+            href={t.href}
+            class={`flex-1 text-center py-3 text-sm font-semibold relative ${
+              active ? "text-mwa-burgundy" : "text-gray-400"
+            }`}
+          >
+            {t.label}{" "}
+            <span class="text-[10px] opacity-70">({t.count})</span>
+            {active && (
+              <span class="absolute bottom-0 left-1/4 right-1/4 h-[3px] bg-mwa-burgundy rounded-t-full" />
+            )}
+          </a>
+        );
+      })
+    }
+  </nav>
+
+  <section class="px-5 lg:px-0 pt-4 pb-10 lg:grid lg:grid-cols-2 lg:gap-3 space-y-2 lg:space-y-0" data-purpose="users-list">
+    {
+      users.length === 0 && (
+        <div class="text-center py-12 text-gray-400 text-sm">
+          Тохирох хэрэглэгч алга байна.
+        </div>
+      )
+    }
+    {
+      users.map((u) => {
+        const isMe = u.id === me.id;
+        const isDevAdmin = u.email === "dev@admin.local";
+        const locked = isMe || isDevAdmin;
+        const plan = u.active_membership_plan
+          ? getPlan(u.active_membership_plan)
+          : null;
+        return (
+          <article
+            class="bg-white border border-gray-100 rounded-2xl shadow-sm p-4"
+            data-user-id={u.id}
+          >
+            <div class="flex items-start gap-3">
+              <div class="w-12 h-12 rounded-full bg-mwa-burgundy text-white font-bold flex items-center justify-center shrink-0 text-sm">
+                {u.name.charAt(0).toUpperCase()}
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 flex-wrap mb-0.5">
+                  <h3 class="font-bold text-sm truncate">{u.name}</h3>
+                  <span
+                    class={`text-[10px] font-bold px-2 py-0.5 rounded-full whitespace-nowrap ${
+                      u.role === "admin"
+                        ? "bg-mwa-burgundy text-white"
+                        : "bg-gray-100 text-gray-600"
+                    }`}
+                  >
+                    {u.role === "admin" ? "Админ" : "Гишүүн"}
+                  </span>
+                  {isMe && (
+                    <span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 rounded-full px-2 py-0.5">
+                      ТА
+                    </span>
+                  )}
+                </div>
+                <div class="text-[11px] text-gray-500 font-mono truncate">
+                  {u.email}
+                </div>
+                <div class="text-[10px] text-gray-400 mt-1">
+                  Бүртгүүлсэн {fmtDate(u.joined_at)}
+                </div>
+              </div>
+            </div>
+
+            {plan && u.active_membership_ends_at && (
+              <div class="mt-3 pt-3 border-t border-gray-100 flex items-center gap-2 text-[11px]">
+                <span class="text-mwa-burgundy">●</span>
+                <span class="font-semibold">{plan.label}</span>
+                <span class="text-gray-400">→ {fmtDate(u.active_membership_ends_at)} хүртэл</span>
+              </div>
+            )}
+
+            {!locked && (
+              <div class="flex gap-2 mt-3 pt-3 border-t border-gray-100">
+                {u.role === "member" ? (
+                  <button
+                    type="button"
+                    class="flex-1 bg-mwa-burgundy text-white text-xs font-bold py-2 rounded-lg active:opacity-80 disabled:opacity-50"
+                    data-action="promote"
+                    data-id={String(u.id)}
+                    data-name={u.name}
+                  >
+                    Админ болгох
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    class="flex-1 bg-white border border-gray-300 text-mwa-text-primary text-xs font-bold py-2 rounded-lg active:opacity-80 disabled:opacity-50"
+                    data-action="demote"
+                    data-id={String(u.id)}
+                    data-name={u.name}
+                  >
+                    Админ эрх хасах
+                  </button>
+                )}
+              </div>
+            )}
+          </article>
+        );
+      })
+    }
+  </section>
+  </div>
+</AdminLayout>
+
+<script>
+  document
+    .querySelectorAll<HTMLButtonElement>("[data-action]")
+    .forEach((btn) => {
+      btn.addEventListener("click", async () => {
+        const id = btn.dataset.id;
+        const action = btn.dataset.action;
+        const name = btn.dataset.name ?? "";
+        if (!id || !action) return;
+        const role = action === "promote" ? "admin" : "member";
+        const msg =
+          action === "promote"
+            ? `${name} хэрэглэгчид админ эрх өгөх үү?`
+            : `${name} хэрэглэгчээс админ эрх хасах уу?`;
+        if (!window.confirm(msg)) return;
+        btn.disabled = true;
+        try {
+          const res = await fetch(`/api/admin/users/${id}`, {
+            method: "PATCH",
+            credentials: "same-origin",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ role }),
+          });
+          if (res.ok) {
+            window.location.reload();
+          } else {
+            const data = (await res.json().catch(() => ({}))) as {
+              error?: string;
+            };
+            alert(data.error ?? "Алдаа гарлаа");
+            btn.disabled = false;
+          }
+        } catch {
+          alert("Сүлжээний алдаа");
+          btn.disabled = false;
+        }
+      });
+    });
+</script>

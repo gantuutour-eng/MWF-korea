@@ -1,0 +1,40 @@
+---
+interface Props {
+  title: string;
+  viewAllHref?: string;
+  viewAllLabel?: string;
+}
+
+const { title, viewAllHref, viewAllLabel = "Бүгдийг харах" } = Astro.props;
+---
+
+<section
+  class="px-5 mb-4 flex items-center justify-between"
+  data-purpose="section-title"
+>
+  <h2 class="text-xl font-bold">{title}</h2>
+  {
+    viewAllHref && (
+      <a
+        href={viewAllHref}
+        class="text-gray-400 flex items-center text-sm font-medium"
+      >
+        {viewAllLabel}
+        <svg
+          class="h-4 w-4 ml-1"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M9 5l7 7-7 7"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+          />
+        </svg>
+      </a>
+    )
+  }
+</section>

@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 340" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="tg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1e40af"/>
+      <stop offset="1" stop-color="#1e3a8a"/>
+    </linearGradient>
+  </defs>
+  <rect width="600" height="340" fill="url(#tg)"/>
+  <g fill="white" opacity="0.12">
+    <polygon points="500,40 580,80 580,160 500,200 420,160 420,80"/>
+    <polygon points="80,200 160,240 160,320 80,360 0,320 0,240"/>
+  </g>
+  <g stroke="white" stroke-width="0.8" fill="none" opacity="0.35">
+    <path d="M-20 200 Q150 120 300 180 T 620 160"/>
+    <path d="M-20 240 Q150 170 300 230 T 620 210"/>
+  </g>
+  <g fill="white" opacity="0.85">
+    <rect x="260" y="130" width="80" height="6" rx="3"/>
+    <rect x="260" y="148" width="60" height="4" rx="2"/>
+    <rect x="260" y="160" width="70" height="4" rx="2"/>
+  </g>
+</svg>

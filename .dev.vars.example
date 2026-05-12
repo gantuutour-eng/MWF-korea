@@ -1,0 +1,14 @@
+# Copy this file to `.dev.vars` (do NOT commit) for local Google OAuth.
+# Wrangler auto-loads `.dev.vars` for `wrangler pages dev` and platformProxy.
+#
+# Create credentials at https://console.cloud.google.com/apis/credentials
+# Authorized redirect URI for local dev:
+#   http://localhost:4321/api/auth/google/callback
+# For production, set the secrets via:
+#   npx wrangler pages secret put GOOGLE_OAUTH_CLIENT_ID
+#   npx wrangler pages secret put GOOGLE_OAUTH_CLIENT_SECRET
+
+GOOGLE_OAUTH_CLIENT_ID="123456789-xxxxxxxxxx.apps.googleusercontent.com"
+GOOGLE_OAUTH_CLIENT_SECRET="GOCSPX-xxxxxxxxxxxxxxxxxxxxxxxxx"
+# Optional override (default: ${origin}/api/auth/google/callback)
+# GOOGLE_OAUTH_REDIRECT_URI="https://your-domain.example/api/auth/google/callback"

@@ -1,0 +1,104 @@
+---
+import AppLayout from "../layouts/AppLayout.astro";
+import HeroBanner from "../components/HeroBanner.astro";
+import HeroCarousel from "../components/HeroCarousel.astro";
+import NewsCarousel from "../components/NewsCarousel.astro";
+import SectionTitle from "../components/SectionTitle.astro";
+import GridCard from "../components/GridCard.astro";
+import { listNews, listHeroSlides } from "../lib/db";
+
+const env = Astro.locals.runtime.env;
+const [latestNews, dbSlides] = await Promise.all([
+  listNews(env.DB, { limit: 6 }),
+  listHeroSlides(env.DB),
+]);
+
+const DEFAULT_HERO_SLIDES = [
+  {
+    title: "Эвлэлдэн нэгдэж<br/>Ирээдүйг бүтээе",
+    subtitle: "1924 оноос эхтэй<br/>бидний түүх",
+  },
+  {
+    title: "Сургалт,<br/>семинарт оролц",
+    subtitle: "Хэлний, ур чадварын<br/>сургалтууд",
+    href: "/events?type=training",
+  },
+  {
+    title: "Гишүүнчлэлд<br/>элсэх",
+    subtitle: "Гишүүний бүх<br/>боломжийг ашигла",
+    href: "/membership",
+  },
+];
+
+const heroSlides =
+  dbSlides.length > 0
+    ? dbSlides.map((s) => ({
+        title: s.title,
+        subtitle: s.subtitle,
+        href: s.href,
+        image_url: s.image_url,
+      }))
+    : DEFAULT_HERO_SLIDES;
+
+const menu = [
+  {
+    href: "/news",
+    label: "Мэдээ<br/>мэдээлэл",
+    iconSrc: "/images/icons/news.png",
+  },
+  {
+    href: "/events",
+    label: "Үйл<br/>ажиллагаа",
+    iconSrc: "/images/icons/activities.png",
+  },
+  {
+    href: "/portfolio",
+    label: "Хийгдсэн<br/>ажлууд",
+    iconSrc: "/images/icons/done.png",
+  },
+  {
+    href: "/membership",
+    label: "Гишүүнчлэл",
+    iconSrc: "/images/icons/membership.png",
+  },
+  {
+    href: "/advice",
+    label: "Зөвлөгөө,<br/>дэмжлэг",
+    iconSrc: "/images/icons/advice.png",
+  },
+  {
+    href: "/about",
+    label: "Бидний тухай",
+    iconSrc: "/images/icons/about.png",
+  },
+];
+---
+
+<AppLayout activeTab="home">
+  <HeroCarousel slides={heroSlides} />
+
+  <SectionTitle title="Үйл ажиллагаа" viewAllHref="/events" />
+
+  <section class="px-5 mb-8" data-purpose="menu-grid">
+    <div class="grid grid-cols-3 gap-x-4 gap-y-5">
+      {
+        menu.map((item) => (
+          <GridCard
+            href={item.href}
+            label={item.label}
+            iconSrc={item.iconSrc}
+          />
+        ))
+      }
+    </div>
+  </section>
+
+  <NewsCarousel items={latestNews} />
+
+  <HeroBanner
+    variant="secondary"
+    title="Эмэгтэйчүүдийн эрх"
+    subtitle="Таны боломж, Таны ирээдүй"
+    href="/about"
+  />
+</AppLayout>
