@@ -21,6 +21,19 @@ interface Env {
    * Example: "owner@gmail.com,partner@gmail.com"
    */
   ADMIN_EMAILS?: string;
+  /**
+   * Resend API key for outbound email (membership order confirmations).
+   * If unset, email-sending is a no-op and the order flow still succeeds.
+   * Set via `wrangler pages secret put RESEND_API_KEY`.
+   */
+  RESEND_API_KEY?: string;
+  /**
+   * Override the "From" address used for outbound email.
+   * Defaults to "MWA Korea <onboarding@resend.dev>" (Resend sandbox, works
+   * without domain verification). Switch to your own domain once verified,
+   * e.g. "MWA Korea <noreply@mwf.co.kr>".
+   */
+  RESEND_FROM?: string;
 }
 
 declare namespace App {

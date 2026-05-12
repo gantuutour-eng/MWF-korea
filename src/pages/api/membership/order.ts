@@ -1,7 +1,12 @@
 import type { APIRoute } from "astro";
-import { getPlan, generateReference } from "../../../lib/membership";
+import {
+  getPlan,
+  generateReference,
+  getBankAccount,
+} from "../../../lib/membership";
 import { createMembershipPayment } from "../../../lib/db";
 import { loadCurrentUser } from "../../../lib/auth";
+import { sendOrderConfirmationEmail } from "../../../lib/email";
 
 interface CreateBody {
   plan_id?: string;
@@ -10,6 +15,7 @@ interface CreateBody {
 
 export const POST: APIRoute = async ({ request, locals }) => {
   const env = locals.runtime.env;
+  const ctx = locals.runtime.ctx;
 
   let body: CreateBody;
   try {
@@ -39,6 +45,33 @@ export const POST: APIRoute = async ({ request, locals }) => {
         amount: plan.totalPrice,
         reference,
       });
+
+      // Fire confirmation email in the background — never block the
+      // response. Workers `waitUntil` keeps the request alive for the
+      // fetch to finish.
+      if (me?.email) {
+        const origin = new URL(request.url).origin;
+        const sendPromise = (async () => {
+          const bank = await getBankAccount(env.DB);
+          await sendOrderConfirmationEmail(env, {
+            to: me.email,
+            recipientName: me.name ?? null,
+            plan,
+            reference,
+            amount: plan.totalPrice,
+            customerMemo: me.name ?? null,
+            bank,
+            orderUrl: `${origin}/membership/pending/${id}`,
+          });
+        })();
+        if (ctx?.waitUntil) {
+          ctx.waitUntil(sendPromise);
+        } else {
+          // No background runtime (e.g. local dev) — fire and forget.
+          sendPromise.catch(() => {});
+        }
+      }
+
       return json({ ok: true, id, reference }, 201);
     } catch (e) {
       const msg = String((e as Error).message ?? "");
