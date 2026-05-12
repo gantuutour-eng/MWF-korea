@@ -4,6 +4,8 @@
 
 -- Drop children before parents (FK respects referenced order)
 DROP TABLE IF EXISTS chat_messages;
+DROP TABLE IF EXISTS event_registrations;
+DROP TABLE IF EXISTS news_bookmarks;
 DROP TABLE IF EXISTS membership_payments;
 DROP TABLE IF EXISTS portfolio_programs;
 DROP TABLE IF EXISTS portfolio_stats;
@@ -91,6 +93,24 @@ CREATE TABLE hero_slides (
 );
 
 CREATE INDEX idx_hero_slides_sort ON hero_slides(sort_order);
+
+CREATE TABLE news_bookmarks (
+  user_id INTEGER NOT NULL REFERENCES users(id),
+  news_id INTEGER NOT NULL REFERENCES news(id),
+  saved_at INTEGER NOT NULL DEFAULT (unixepoch()),
+  PRIMARY KEY (user_id, news_id)
+);
+
+CREATE INDEX idx_news_bookmarks_user_saved ON news_bookmarks(user_id, saved_at DESC);
+
+CREATE TABLE event_registrations (
+  user_id INTEGER NOT NULL REFERENCES users(id),
+  event_id INTEGER NOT NULL REFERENCES events(id),
+  registered_at INTEGER NOT NULL DEFAULT (unixepoch()),
+  PRIMARY KEY (user_id, event_id)
+);
+
+CREATE INDEX idx_event_regs_user_time ON event_registrations(user_id, registered_at DESC);
 
 CREATE TABLE chat_messages (
   id INTEGER PRIMARY KEY AUTOINCREMENT,

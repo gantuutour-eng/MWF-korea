@@ -1,17 +1,28 @@
 ---
 import AppLayout from "../../layouts/AppLayout.astro";
-import { getEvent } from "../../lib/db";
+import { getEvent, isEventRegistered } from "../../lib/db";
+import { loadCurrentUser } from "../../lib/auth";
 import { styleFor, formatDate, formatTime } from "../../lib/eventStyles";
 
+const env = Astro.locals.runtime.env;
 const id = Number(Astro.params.id);
 let row = null;
 if (Number.isFinite(id)) {
-  row = await getEvent(Astro.locals.runtime.env.DB, id);
+  row = await getEvent(env.DB, id);
 }
 
 if (!row) {
   return Astro.redirect("/events");
 }
+
+const me = await loadCurrentUser(
+  env.DB,
+  env.SESSIONS,
+  Astro.request.headers.get("cookie"),
+);
+const initiallyRegistered = me
+  ? await isEventRegistered(env.DB, me.id, row.id)
+  : false;
 
 const style = styleFor(row.type);
 const startDate = new Date(row.start_at * 1000);
@@ -158,10 +169,17 @@ const timeLine = endDate
   >
     <button
       type="button"
-      class="w-full bg-mwa-burgundy text-white font-bold py-3.5 rounded-2xl active:opacity-80 transition"
+      class={`w-full font-bold py-3.5 rounded-2xl active:opacity-80 transition ${
+        initiallyRegistered
+          ? "bg-white border border-mwa-burgundy text-mwa-burgundy"
+          : "bg-mwa-burgundy text-white"
+      }`}
       data-action="register"
+      data-event-id={String(row.id)}
+      data-registered={initiallyRegistered ? "1" : "0"}
+      data-logged-in={me ? "1" : "0"}
     >
-      Бүртгүүлэх
+      {initiallyRegistered ? "Бүртгүүлсэн ✓" : "Бүртгүүлэх"}
     </button>
   </div>
 </AppLayout>
@@ -204,10 +222,12 @@ const timeLine = endDate
   document
     .querySelectorAll<HTMLButtonElement>('[data-action="register"]')
     .forEach((btn) => {
-      let registered = false;
-      btn.addEventListener("click", () => {
-        registered = !registered;
-        if (registered) {
+      const eventId = btn.dataset.eventId;
+      const loggedIn = btn.dataset.loggedIn === "1";
+
+      const applyState = (on: boolean) => {
+        btn.dataset.registered = on ? "1" : "0";
+        if (on) {
           btn.textContent = "Бүртгүүлсэн ✓";
           btn.classList.remove("bg-mwa-burgundy", "text-white");
           btn.classList.add(
@@ -225,6 +245,36 @@ const timeLine = endDate
             "border-mwa-burgundy",
             "text-mwa-burgundy",
           );
+        }
+      };
+
+      btn.addEventListener("click", async () => {
+        if (!loggedIn) {
+          const next = encodeURIComponent(window.location.pathname);
+          window.location.href = `/profile/login?next=${next}`;
+          return;
+        }
+        if (!eventId) return;
+        btn.disabled = true;
+        try {
+          const res = await fetch(`/api/events/${eventId}/register`, {
+            method: "POST",
+            credentials: "same-origin",
+          });
+          const data = (await res.json().catch(() => ({}))) as {
+            ok?: boolean;
+            registered?: boolean;
+            error?: string;
+          };
+          if (res.ok && data.ok) {
+            applyState(data.registered === true);
+          } else if (data.error) {
+            alert(data.error);
+          }
+        } catch {
+          // ignore
+        } finally {
+          btn.disabled = false;
         }
       });
     });

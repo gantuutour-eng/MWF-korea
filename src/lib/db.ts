@@ -766,6 +766,162 @@ export async function getActiveMembership(
     .first<MembershipPaymentRow>();
 }
 
+export async function updateUserInfo(
+  db: D1Database,
+  id: number,
+  data: { name?: string; phone?: string | null },
+): Promise<void> {
+  const updates: string[] = [];
+  const binds: unknown[] = [];
+  if (data.name !== undefined) {
+    updates.push("name = ?");
+    binds.push(data.name);
+  }
+  if (data.phone !== undefined) {
+    updates.push("phone = ?");
+    binds.push(data.phone);
+  }
+  if (updates.length === 0) return;
+  binds.push(id);
+  await db
+    .prepare(`UPDATE users SET ${updates.join(", ")} WHERE id = ?`)
+    .bind(...binds)
+    .run();
+}
+
+export async function updateUserPassword(
+  db: D1Database,
+  id: number,
+  passwordHash: string,
+): Promise<void> {
+  await db
+    .prepare("UPDATE users SET password_hash = ? WHERE id = ?")
+    .bind(passwordHash, id)
+    .run();
+}
+
+// ---------- News bookmarks ----------
+
+export async function isNewsBookmarked(
+  db: D1Database,
+  userId: number,
+  newsId: number,
+): Promise<boolean> {
+  const row = await db
+    .prepare(
+      "SELECT 1 AS x FROM news_bookmarks WHERE user_id = ?1 AND news_id = ?2",
+    )
+    .bind(userId, newsId)
+    .first<{ x: number }>();
+  return row !== null;
+}
+
+export async function toggleNewsBookmark(
+  db: D1Database,
+  userId: number,
+  newsId: number,
+): Promise<{ bookmarked: boolean }> {
+  const exists = await isNewsBookmarked(db, userId, newsId);
+  if (exists) {
+    await db
+      .prepare(
+        "DELETE FROM news_bookmarks WHERE user_id = ?1 AND news_id = ?2",
+      )
+      .bind(userId, newsId)
+      .run();
+    return { bookmarked: false };
+  }
+  await db
+    .prepare(
+      "INSERT INTO news_bookmarks (user_id, news_id) VALUES (?1, ?2)",
+    )
+    .bind(userId, newsId)
+    .run();
+  return { bookmarked: true };
+}
+
+export interface NewsBookmarkRow extends NewsRow {
+  saved_at: number;
+}
+
+export async function listSavedNews(
+  db: D1Database,
+  userId: number,
+): Promise<NewsBookmarkRow[]> {
+  const { results } = await db
+    .prepare(
+      `SELECT n.${NEWS_COLS.split(", ").join(", n.")}, b.saved_at
+       FROM news_bookmarks b
+       JOIN news n ON n.id = b.news_id
+       WHERE b.user_id = ?1
+       ORDER BY b.saved_at DESC`,
+    )
+    .bind(userId)
+    .all<NewsBookmarkRow>();
+  return results ?? [];
+}
+
+// ---------- Event registrations ----------
+
+export async function isEventRegistered(
+  db: D1Database,
+  userId: number,
+  eventId: number,
+): Promise<boolean> {
+  const row = await db
+    .prepare(
+      "SELECT 1 AS x FROM event_registrations WHERE user_id = ?1 AND event_id = ?2",
+    )
+    .bind(userId, eventId)
+    .first<{ x: number }>();
+  return row !== null;
+}
+
+export async function toggleEventRegistration(
+  db: D1Database,
+  userId: number,
+  eventId: number,
+): Promise<{ registered: boolean }> {
+  const exists = await isEventRegistered(db, userId, eventId);
+  if (exists) {
+    await db
+      .prepare(
+        "DELETE FROM event_registrations WHERE user_id = ?1 AND event_id = ?2",
+      )
+      .bind(userId, eventId)
+      .run();
+    return { registered: false };
+  }
+  await db
+    .prepare(
+      "INSERT INTO event_registrations (user_id, event_id) VALUES (?1, ?2)",
+    )
+    .bind(userId, eventId)
+    .run();
+  return { registered: true };
+}
+
+export interface UserEventRow extends EventRow {
+  registered_at: number;
+}
+
+export async function listMyEvents(
+  db: D1Database,
+  userId: number,
+): Promise<UserEventRow[]> {
+  const { results } = await db
+    .prepare(
+      `SELECT e.${EVENT_COLS.split(", ").join(", e.")}, r.registered_at
+       FROM event_registrations r
+       JOIN events e ON e.id = r.event_id
+       WHERE r.user_id = ?1
+       ORDER BY e.start_at ASC`,
+    )
+    .bind(userId)
+    .all<UserEventRow>();
+  return results ?? [];
+}
+
 export async function createUser(
   db: D1Database,
   data: {

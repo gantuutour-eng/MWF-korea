@@ -1,9 +1,25 @@
 ---
 import AppLayout from "../../layouts/AppLayout.astro";
+import { loadCurrentUser } from "../../lib/auth";
+
+const env = Astro.locals.runtime.env;
+const me = await loadCurrentUser(
+  env.DB,
+  env.SESSIONS,
+  Astro.request.headers.get("cookie"),
+);
+
+if (!me) {
+  return Astro.redirect("/profile/login?next=/profile/settings");
+}
+
+const memberNumber = `MG1924-${String(me.id).padStart(6, "0")}`;
+const joinedDate = new Date(me.joined_at * 1000);
+const joinedLabel = `${joinedDate.getFullYear()}.${String(joinedDate.getMonth() + 1).padStart(2, "0")}.${String(joinedDate.getDate()).padStart(2, "0")}`;
 ---
 
 <AppLayout title="Тохиргоо" activeTab="profile" showHeader={false}>
-  <header class="px-3 pt-6 pb-3 flex items-center">
+  <header class="px-3 pt-6 pb-3 flex items-center bg-white border-b border-gray-100 sticky top-0 z-20">
     <a href="/profile" aria-label="Буцах" class="p-2">
       <svg
         class="h-6 w-6 text-mwa-text-primary"
@@ -22,7 +38,167 @@ import AppLayout from "../../layouts/AppLayout.astro";
     <div class="w-10"></div>
   </header>
 
-  <section class="px-5 py-12 text-center text-gray-400 text-sm">
-    Мэдэгдэл, хэл, нууцлалын тохиргоо удахгүй нэмэгдэнэ.
+  <section class="px-5 pt-4 mb-6" data-purpose="account-info">
+    <h2 class="font-bold text-sm text-mwa-text-secondary uppercase tracking-wide mb-3">
+      Бүртгэлийн мэдээлэл
+    </h2>
+    <div class="bg-white border border-gray-100 rounded-2xl p-4 space-y-2 text-sm">
+      <div class="flex items-center justify-between">
+        <span class="text-gray-500">Имэйл</span>
+        <span class="font-mono text-xs truncate ml-2">{me.email}</span>
+      </div>
+      <div class="flex items-center justify-between border-t border-gray-100 pt-2">
+        <span class="text-gray-500">Гишүүний дугаар</span>
+        <span class="font-mono text-xs">{memberNumber}</span>
+      </div>
+      <div class="flex items-center justify-between border-t border-gray-100 pt-2">
+        <span class="text-gray-500">Бүртгүүлсэн</span>
+        <span class="font-semibold text-xs">{joinedLabel}</span>
+      </div>
+      <div class="flex items-center justify-between border-t border-gray-100 pt-2">
+        <span class="text-gray-500">Эрх</span>
+        <span class="font-semibold text-xs">
+          {me.role === "admin" ? "Админ" : "Гишүүн"}
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <section class="px-5 mb-6" data-purpose="settings-actions">
+    <h2 class="font-bold text-sm text-mwa-text-secondary uppercase tracking-wide mb-3">
+      Бүртгэлийн үйлдэл
+    </h2>
+
+    <a
+      href="/profile/info"
+      class="flex items-center gap-3 bg-white border border-gray-100 rounded-2xl p-4 active:bg-gray-50 mb-2"
+    >
+      <svg
+        class="w-5 h-5 text-mwa-text-secondary"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+        />
+      </svg>
+      <div class="flex-1 min-w-0">
+        <div class="font-bold text-sm">Хувийн мэдээлэл засах</div>
+        <div class="text-[11px] text-mwa-text-secondary">
+          Нэр, утас, нууц үг солих
+        </div>
+      </div>
+      <svg class="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+      </svg>
+    </a>
+
+    <a
+      href="/profile/membership"
+      class="flex items-center gap-3 bg-white border border-gray-100 rounded-2xl p-4 active:bg-gray-50 mb-2"
+    >
+      <svg
+        class="w-5 h-5 text-mwa-text-secondary"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <rect x="3" y="6" width="18" height="13" rx="2" stroke-width="2"/>
+        <path d="M3 10h18" stroke-width="2"/>
+      </svg>
+      <div class="flex-1 min-w-0">
+        <div class="font-bold text-sm">Гишүүнчлэлийн төлөв</div>
+        <div class="text-[11px] text-mwa-text-secondary">
+          Идэвхтэй эрх, төлбөрийн түүх
+        </div>
+      </div>
+      <svg class="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+      </svg>
+    </a>
+
+    <a
+      href="/chat"
+      class="flex items-center gap-3 bg-white border border-gray-100 rounded-2xl p-4 active:bg-gray-50 mb-2"
+    >
+      <svg
+        class="w-5 h-5 text-mwa-text-secondary"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          d="M21 11.5a8.38 8.38 0 01-.9 3.8 8.5 8.5 0 01-7.6 4.7 8.38 8.38 0 01-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 01-.9-3.8 8.5 8.5 0 014.7-7.6 8.38 8.38 0 013.8-.9h.5a8.48 8.48 0 018 8v.5z"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+        />
+      </svg>
+      <div class="flex-1 min-w-0">
+        <div class="font-bold text-sm">Админтай холбоо барих</div>
+        <div class="text-[11px] text-mwa-text-secondary">
+          Асуулт, гомдол, бүртгэл устгуулах
+        </div>
+      </div>
+      <svg class="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+      </svg>
+    </a>
+  </section>
+
+  <section class="px-5 mb-6" data-purpose="legal">
+    <h2 class="font-bold text-sm text-mwa-text-secondary uppercase tracking-wide mb-3">
+      Үйлчилгээний нөхцөл
+    </h2>
+    <a
+      href="/privacy"
+      class="flex items-center justify-between bg-white border border-gray-100 rounded-2xl p-4 active:bg-gray-50 mb-2"
+    >
+      <span class="text-sm">Нууцлалын бодлого</span>
+      <svg class="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+      </svg>
+    </a>
+    <a
+      href="/terms"
+      class="flex items-center justify-between bg-white border border-gray-100 rounded-2xl p-4 active:bg-gray-50 mb-2"
+    >
+      <span class="text-sm">Үйлчилгээний нөхцөл</span>
+      <svg class="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+      </svg>
+    </a>
+    <a
+      href="/about"
+      class="flex items-center justify-between bg-white border border-gray-100 rounded-2xl p-4 active:bg-gray-50"
+    >
+      <span class="text-sm">Бидний тухай</span>
+      <svg class="w-4 h-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path d="M9 5l7 7-7 7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+      </svg>
+    </a>
+  </section>
+
+  <section class="px-5 pb-10">
+    <form method="POST" action="/api/auth/logout">
+      <button
+        type="submit"
+        class="w-full flex items-center justify-center gap-2 bg-white border border-rose-200 text-rose-600 font-bold rounded-2xl py-3.5 text-sm active:bg-rose-50"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+          />
+        </svg>
+        Гарах
+      </button>
+    </form>
   </section>
 </AppLayout>
