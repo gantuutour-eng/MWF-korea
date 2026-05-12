@@ -45,7 +45,12 @@ const types: { value: EventType; label: string }[] = EVENT_TYPES.map((t) => ({
       <h1 class="text-2xl font-extrabold">Шинэ арга хэмжээ</h1>
     </div>
 
-    <form id="event-form" class="px-5 lg:px-0 pb-10 space-y-4" onsubmit="return false">
+    <form
+      id="event-form"
+      class="px-5 lg:px-0 pb-10 space-y-4"
+      onsubmit="return false"
+      enctype="multipart/form-data"
+    >
     <div>
       <label class="text-xs font-bold text-mwa-text-secondary mb-1.5 block">
         Төрөл <span class="text-rose-500">*</span>
@@ -112,14 +117,64 @@ const types: { value: EventType; label: string }[] = EVENT_TYPES.map((t) => ({
 
     <div>
       <label class="text-xs font-bold text-mwa-text-secondary mb-1.5 block">
-        Зурагны URL
+        Зураг
       </label>
-      <input
-        name="image_url"
-        type="text"
-        placeholder="/images/events/event-xxx.svg эсвэл https://..."
-        class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-mwa-burgundy font-mono"
-      />
+      <div
+        class="border-2 border-dashed border-gray-200 rounded-xl p-4 text-center"
+        data-purpose="dropzone"
+      >
+        <input
+          type="file"
+          name="image"
+          accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml"
+          class="hidden"
+          data-image-input
+        />
+        <div data-empty-state>
+          <svg
+            class="w-10 h-10 mx-auto text-gray-300 mb-2"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+            />
+          </svg>
+          <button
+            type="button"
+            class="text-sm font-bold text-mwa-burgundy"
+            data-pick-image
+          >
+            Зураг сонгох
+          </button>
+          <p class="text-[11px] text-gray-400 mt-1">
+            PNG, JPG, WebP, GIF, SVG · 5MB хүртэл · 16:9 хэмжээ зөвлөмжтэй
+          </p>
+        </div>
+        <div class="hidden" data-preview-state>
+          <div class="aspect-[16/9] rounded-lg overflow-hidden bg-gray-100 mb-2">
+            <img
+              data-preview-img
+              alt=""
+              class="w-full h-full object-cover"
+            />
+          </div>
+          <div class="flex items-center justify-between text-xs">
+            <span class="font-mono truncate" data-preview-name></span>
+            <button
+              type="button"
+              class="text-rose-600 font-bold"
+              data-clear-image
+            >
+              Цэвэрлэх
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <div>
@@ -156,6 +211,8 @@ const types: { value: EventType; label: string }[] = EVENT_TYPES.map((t) => ({
 </AdminLayout>
 
 <script>
+  import { convertImageToWebp } from "../../../scripts/imageToWebp";
+
   interface ApiResponse {
     ok?: boolean;
     id?: number;
@@ -165,6 +222,35 @@ const types: { value: EventType; label: string }[] = EVENT_TYPES.map((t) => ({
   const form = document.getElementById("event-form") as HTMLFormElement | null;
   const errorEl = document.getElementById("event-error");
   const successEl = document.getElementById("event-success");
+
+  // ---------- Image picker / preview ----------
+  const imageInput = document.querySelector<HTMLInputElement>("[data-image-input]");
+  const pickBtn = document.querySelector<HTMLButtonElement>("[data-pick-image]");
+  const clearBtn = document.querySelector<HTMLButtonElement>("[data-clear-image]");
+  const emptyState = document.querySelector<HTMLElement>("[data-empty-state]");
+  const previewState = document.querySelector<HTMLElement>("[data-preview-state]");
+  const previewImg = document.querySelector<HTMLImageElement>("[data-preview-img]");
+  const previewName = document.querySelector<HTMLElement>("[data-preview-name]");
+
+  pickBtn?.addEventListener("click", () => imageInput?.click());
+
+  imageInput?.addEventListener("change", () => {
+    const file = imageInput.files?.[0];
+    if (!file) return;
+    if (!previewImg || !previewName || !emptyState || !previewState) return;
+    previewImg.src = URL.createObjectURL(file);
+    previewName.textContent = `${file.name} (${(file.size / 1024).toFixed(0)} KB)`;
+    emptyState.classList.add("hidden");
+    previewState.classList.remove("hidden");
+  });
+
+  clearBtn?.addEventListener("click", () => {
+    if (!imageInput || !emptyState || !previewState || !previewImg) return;
+    imageInput.value = "";
+    previewImg.src = "";
+    emptyState.classList.remove("hidden");
+    previewState.classList.add("hidden");
+  });
 
   function toUnix(value: string): number | undefined {
     if (!value) return undefined;
@@ -186,22 +272,39 @@ const types: { value: EventType; label: string }[] = EVENT_TYPES.map((t) => ({
     const data = new FormData(form);
     const startAt = toUnix(String(data.get("start_at") ?? ""));
     const endAtRaw = String(data.get("end_at") ?? "");
-    const payload: Record<string, unknown> = {
-      type: String(data.get("type") ?? ""),
-      title: String(data.get("title") ?? "").trim(),
-      description: String(data.get("description") ?? "").trim() || undefined,
-      location: String(data.get("location") ?? "").trim() || undefined,
-      image_url: String(data.get("image_url") ?? "").trim() || undefined,
-      start_at: startAt,
-    };
-    if (endAtRaw) payload.end_at = toUnix(endAtRaw);
+    if (startAt === undefined) {
+      errorEl.textContent = "Эхлэх огноо буруу";
+      errorEl.classList.remove("hidden");
+      if (submitBtn) submitBtn.disabled = false;
+      return;
+    }
+
+    const fd = new FormData();
+    fd.set("type", String(data.get("type") ?? ""));
+    fd.set("title", String(data.get("title") ?? "").trim());
+    fd.set("description", String(data.get("description") ?? "").trim());
+    fd.set("location", String(data.get("location") ?? "").trim());
+    fd.set("start_at", String(startAt));
+    if (endAtRaw) {
+      const endAt = toUnix(endAtRaw);
+      if (endAt !== undefined) fd.set("end_at", String(endAt));
+    }
+
+    const rawImage = data.get("image");
+    if (rawImage instanceof File && rawImage.size > 0) {
+      try {
+        const converted = await convertImageToWebp(rawImage);
+        fd.set("image", converted, converted.name);
+      } catch {
+        fd.set("image", rawImage, rawImage.name);
+      }
+    }
 
     try {
       const res = await fetch("/api/events", {
         method: "POST",
         credentials: "same-origin",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(payload),
+        body: fd,
       });
       const body = (await res.json().catch(() => ({}))) as ApiResponse;
       if (res.ok && body.ok) {

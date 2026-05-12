@@ -127,6 +127,46 @@ export async function createNews(
   return result.meta.last_row_id;
 }
 
+// ---------- News images (gallery) ----------
+
+export interface NewsImageRow {
+  id: number;
+  news_id: number;
+  url: string;
+  sort_order: number;
+  created_at: number;
+}
+
+export async function listNewsImages(
+  db: D1Database,
+  newsId: number,
+): Promise<NewsImageRow[]> {
+  const { results } = await db
+    .prepare(
+      "SELECT id, news_id, url, sort_order, created_at FROM news_images WHERE news_id = ?1 ORDER BY sort_order ASC, id ASC",
+    )
+    .bind(newsId)
+    .all<NewsImageRow>();
+  return results ?? [];
+}
+
+export async function createNewsImage(
+  db: D1Database,
+  data: {
+    news_id: number;
+    url: string;
+    sort_order: number;
+  },
+): Promise<number> {
+  const result = await db
+    .prepare(
+      "INSERT INTO news_images (news_id, url, sort_order) VALUES (?1, ?2, ?3)",
+    )
+    .bind(data.news_id, data.url, data.sort_order)
+    .run();
+  return result.meta.last_row_id;
+}
+
 const EVENT_COLS =
   "id, type, title, description, location, start_at, end_at, image_url";
 
@@ -239,6 +279,35 @@ export async function deleteEvent(
     .bind(id)
     .run();
   return result.meta.changes > 0;
+}
+
+/**
+ * Find the events immediately before and after the given event in
+ * chronological order (by start_at, then id as tiebreaker).
+ */
+export async function getAdjacentEvents(
+  db: D1Database,
+  current: { id: number; start_at: number },
+): Promise<{ prev: EventRow | null; next: EventRow | null }> {
+  const prev = await db
+    .prepare(
+      `SELECT ${EVENT_COLS} FROM events
+         WHERE (start_at < ?1) OR (start_at = ?1 AND id < ?2)
+         ORDER BY start_at DESC, id DESC
+         LIMIT 1`,
+    )
+    .bind(current.start_at, current.id)
+    .first<EventRow>();
+  const next = await db
+    .prepare(
+      `SELECT ${EVENT_COLS} FROM events
+         WHERE (start_at > ?1) OR (start_at = ?1 AND id > ?2)
+         ORDER BY start_at ASC, id ASC
+         LIMIT 1`,
+    )
+    .bind(current.start_at, current.id)
+    .first<EventRow>();
+  return { prev, next };
 }
 
 export interface UserSummaryRow extends UserRow {
@@ -899,6 +968,46 @@ export async function toggleEventRegistration(
     .bind(userId, eventId)
     .run();
   return { registered: true };
+}
+
+// ---------- Event bookmarks ----------
+
+export async function isEventBookmarked(
+  db: D1Database,
+  userId: number,
+  eventId: number,
+): Promise<boolean> {
+  const row = await db
+    .prepare(
+      "SELECT 1 AS x FROM event_bookmarks WHERE user_id = ?1 AND event_id = ?2",
+    )
+    .bind(userId, eventId)
+    .first<{ x: number }>();
+  return row !== null;
+}
+
+export async function toggleEventBookmark(
+  db: D1Database,
+  userId: number,
+  eventId: number,
+): Promise<{ bookmarked: boolean }> {
+  const exists = await isEventBookmarked(db, userId, eventId);
+  if (exists) {
+    await db
+      .prepare(
+        "DELETE FROM event_bookmarks WHERE user_id = ?1 AND event_id = ?2",
+      )
+      .bind(userId, eventId)
+      .run();
+    return { bookmarked: false };
+  }
+  await db
+    .prepare(
+      "INSERT INTO event_bookmarks (user_id, event_id) VALUES (?1, ?2)",
+    )
+    .bind(userId, eventId)
+    .run();
+  return { bookmarked: true };
 }
 
 export interface UserEventRow extends EventRow {

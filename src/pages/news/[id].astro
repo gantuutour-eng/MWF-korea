@@ -1,7 +1,13 @@
 ---
 import AppLayout from "../../layouts/AppLayout.astro";
 import NewsCarousel from "../../components/NewsCarousel.astro";
-import { getNews, listNews, isNewsBookmarked } from "../../lib/db";
+import NewsGallery from "../../components/NewsGallery.astro";
+import {
+  getNews,
+  listNews,
+  listNewsImages,
+  isNewsBookmarked,
+} from "../../lib/db";
 import { loadCurrentUser } from "../../lib/auth";
 
 const env = Astro.locals.runtime.env;
@@ -14,6 +20,12 @@ if (Number.isFinite(id)) {
 if (!row) {
   return Astro.redirect("/news");
 }
+
+const galleryRows = await listNewsImages(env.DB, row.id);
+const galleryImages = galleryRows.map((r) => r.url);
+// Legacy posts (no news_images rows) still render via cover_url.
+const fallbackImages = row.cover_url ? [row.cover_url] : [];
+const images = galleryImages.length > 0 ? galleryImages : fallbackImages;
 
 const related = await listNews(env.DB, {
   limit: 5,
@@ -57,19 +69,7 @@ const initiallySaved = me
       {row.title}
     </h1>
 
-    {
-      row.cover_url && (
-        <div class="px-5">
-          <div class="rounded-2xl overflow-hidden bg-gray-100 aspect-[16/9]">
-            <img
-              src={row.cover_url}
-              alt=""
-              class="w-full h-full object-cover"
-            />
-          </div>
-        </div>
-      )
-    }
+    {images.length > 0 && <NewsGallery images={images} />}
 
     <div
       class="px-5 mt-4 flex items-center justify-end gap-5 text-gray-500"

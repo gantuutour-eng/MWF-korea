@@ -4,8 +4,10 @@
 
 -- Drop children before parents (FK respects referenced order)
 DROP TABLE IF EXISTS chat_messages;
+DROP TABLE IF EXISTS event_bookmarks;
 DROP TABLE IF EXISTS event_registrations;
 DROP TABLE IF EXISTS news_bookmarks;
+DROP TABLE IF EXISTS news_images;
 DROP TABLE IF EXISTS membership_payments;
 DROP TABLE IF EXISTS portfolio_programs;
 DROP TABLE IF EXISTS portfolio_stats;
@@ -103,6 +105,16 @@ CREATE TABLE news_bookmarks (
 
 CREATE INDEX idx_news_bookmarks_user_saved ON news_bookmarks(user_id, saved_at DESC);
 
+CREATE TABLE news_images (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  news_id INTEGER NOT NULL REFERENCES news(id),
+  url TEXT NOT NULL,                                  -- '/api/media/news/...' or external URL
+  sort_order INTEGER NOT NULL DEFAULT 0,
+  created_at INTEGER NOT NULL DEFAULT (unixepoch())
+);
+
+CREATE INDEX idx_news_images_news_sort ON news_images(news_id, sort_order);
+
 CREATE TABLE event_registrations (
   user_id INTEGER NOT NULL REFERENCES users(id),
   event_id INTEGER NOT NULL REFERENCES events(id),
@@ -111,6 +123,15 @@ CREATE TABLE event_registrations (
 );
 
 CREATE INDEX idx_event_regs_user_time ON event_registrations(user_id, registered_at DESC);
+
+CREATE TABLE event_bookmarks (
+  user_id INTEGER NOT NULL REFERENCES users(id),
+  event_id INTEGER NOT NULL REFERENCES events(id),
+  saved_at INTEGER NOT NULL DEFAULT (unixepoch()),
+  PRIMARY KEY (user_id, event_id)
+);
+
+CREATE INDEX idx_event_bookmarks_user_saved ON event_bookmarks(user_id, saved_at DESC);
 
 CREATE TABLE chat_messages (
   id INTEGER PRIMARY KEY AUTOINCREMENT,

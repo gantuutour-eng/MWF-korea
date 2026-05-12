@@ -270,6 +270,8 @@ const slides = await listHeroSlides(env.DB);
 </AdminLayout>
 
 <script>
+  import { convertImageToWebp } from "../../scripts/imageToWebp";
+
   interface ApiResponse {
     ok?: boolean;
     id?: number;
@@ -324,6 +326,17 @@ const slides = await listHeroSlides(env.DB);
 
     try {
       const fd = new FormData(form);
+      // Replace the raw image with a WebP-converted version (PNG/JPEG only;
+      // SVG/GIF/already-WebP pass through unchanged).
+      const rawImage = fd.get("image");
+      if (rawImage instanceof File && rawImage.size > 0) {
+        try {
+          const converted = await convertImageToWebp(rawImage);
+          fd.set("image", converted, converted.name);
+        } catch {
+          // keep original on failure
+        }
+      }
       const res = await fetch("/api/hero-slides", {
         method: "POST",
         credentials: "same-origin",
