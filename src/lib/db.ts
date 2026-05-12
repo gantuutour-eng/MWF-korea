@@ -167,6 +167,82 @@ export async function createNewsImage(
   return result.meta.last_row_id;
 }
 
+export async function deleteNewsImages(
+  db: D1Database,
+  newsId: number,
+): Promise<void> {
+  await db
+    .prepare("DELETE FROM news_images WHERE news_id = ?1")
+    .bind(newsId)
+    .run();
+}
+
+export async function updateNews(
+  db: D1Database,
+  id: number,
+  data: {
+    title?: string;
+    subtitle?: string | null;
+    body?: string;
+    image_url?: string | null;
+    cover_url?: string | null;
+    category?: NewsCategory;
+  },
+): Promise<void> {
+  const updates: string[] = [];
+  const binds: unknown[] = [];
+  if (data.title !== undefined) {
+    updates.push("title = ?");
+    binds.push(data.title);
+  }
+  if (data.subtitle !== undefined) {
+    updates.push("subtitle = ?");
+    binds.push(data.subtitle);
+  }
+  if (data.body !== undefined) {
+    updates.push("body = ?");
+    binds.push(data.body);
+  }
+  if (data.image_url !== undefined) {
+    updates.push("image_url = ?");
+    binds.push(data.image_url);
+  }
+  if (data.cover_url !== undefined) {
+    updates.push("cover_url = ?");
+    binds.push(data.cover_url);
+  }
+  if (data.category !== undefined) {
+    updates.push("category = ?");
+    binds.push(data.category);
+  }
+  if (updates.length === 0) return;
+  binds.push(id);
+  await db
+    .prepare(`UPDATE news SET ${updates.join(", ")} WHERE id = ?`)
+    .bind(...binds)
+    .run();
+}
+
+export async function deleteNews(
+  db: D1Database,
+  id: number,
+): Promise<boolean> {
+  // Wipe FK-referencing rows first (news_bookmarks, news_images).
+  await db
+    .prepare("DELETE FROM news_bookmarks WHERE news_id = ?1")
+    .bind(id)
+    .run();
+  await db
+    .prepare("DELETE FROM news_images WHERE news_id = ?1")
+    .bind(id)
+    .run();
+  const res = await db
+    .prepare("DELETE FROM news WHERE id = ?1")
+    .bind(id)
+    .run();
+  return res.meta.changes > 0;
+}
+
 const EVENT_COLS =
   "id, type, title, description, location, start_at, end_at, image_url";
 
@@ -274,11 +350,71 @@ export async function deleteEvent(
   db: D1Database,
   id: number,
 ): Promise<boolean> {
+  // Wipe FK-referencing rows first.
+  await db
+    .prepare("DELETE FROM event_registrations WHERE event_id = ?1")
+    .bind(id)
+    .run();
+  await db
+    .prepare("DELETE FROM event_bookmarks WHERE event_id = ?1")
+    .bind(id)
+    .run();
   const result = await db
     .prepare("DELETE FROM events WHERE id = ?1")
     .bind(id)
     .run();
   return result.meta.changes > 0;
+}
+
+export async function updateEvent(
+  db: D1Database,
+  id: number,
+  data: {
+    type?: EventType;
+    title?: string;
+    description?: string | null;
+    location?: string | null;
+    start_at?: number;
+    end_at?: number | null;
+    image_url?: string | null;
+  },
+): Promise<void> {
+  const updates: string[] = [];
+  const binds: unknown[] = [];
+  if (data.type !== undefined) {
+    updates.push("type = ?");
+    binds.push(data.type);
+  }
+  if (data.title !== undefined) {
+    updates.push("title = ?");
+    binds.push(data.title);
+  }
+  if (data.description !== undefined) {
+    updates.push("description = ?");
+    binds.push(data.description);
+  }
+  if (data.location !== undefined) {
+    updates.push("location = ?");
+    binds.push(data.location);
+  }
+  if (data.start_at !== undefined) {
+    updates.push("start_at = ?");
+    binds.push(data.start_at);
+  }
+  if (data.end_at !== undefined) {
+    updates.push("end_at = ?");
+    binds.push(data.end_at);
+  }
+  if (data.image_url !== undefined) {
+    updates.push("image_url = ?");
+    binds.push(data.image_url);
+  }
+  if (updates.length === 0) return;
+  binds.push(id);
+  await db
+    .prepare(`UPDATE events SET ${updates.join(", ")} WHERE id = ?`)
+    .bind(...binds)
+    .run();
 }
 
 /**
@@ -465,6 +601,48 @@ export async function deleteHeroSlide(
   if (!row) return null;
   await db.prepare("DELETE FROM hero_slides WHERE id = ?1").bind(id).run();
   return row;
+}
+
+export async function updateHeroSlide(
+  db: D1Database,
+  id: number,
+  data: {
+    title?: string;
+    subtitle?: string | null;
+    image_url?: string | null;
+    href?: string | null;
+    sort_order?: number;
+  },
+): Promise<void> {
+  const updates: string[] = [];
+  const binds: unknown[] = [];
+  if (data.title !== undefined) {
+    updates.push("title = ?");
+    binds.push(data.title);
+  }
+  if (data.subtitle !== undefined) {
+    updates.push("subtitle = ?");
+    binds.push(data.subtitle);
+  }
+  if (data.image_url !== undefined) {
+    updates.push("image_url = ?");
+    binds.push(data.image_url);
+  }
+  if (data.href !== undefined) {
+    updates.push("href = ?");
+    binds.push(data.href);
+  }
+  if (data.sort_order !== undefined) {
+    updates.push("sort_order = ?");
+    binds.push(data.sort_order);
+  }
+  if (updates.length === 0) return;
+  updates.push("updated_at = unixepoch()");
+  binds.push(id);
+  await db
+    .prepare(`UPDATE hero_slides SET ${updates.join(", ")} WHERE id = ?`)
+    .bind(...binds)
+    .run();
 }
 
 export type PortfolioTone =

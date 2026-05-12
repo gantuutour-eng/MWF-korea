@@ -115,15 +115,23 @@ function withLineBreaks(text: string | null | undefined): string {
                     <span class="text-gray-400">холбоосгүй</span>
                   )}
                 </div>
-                <button
-                  type="button"
-                  class="text-rose-600 font-bold px-3 py-1.5 rounded-lg border border-rose-200 active:bg-rose-50 disabled:opacity-50 shrink-0"
-                  data-action="delete"
-                  data-id={String(s.id)}
-                  data-title={s.title.replace(/<br\/?>/gi, " ").replace(/\s+/g, " ")}
-                >
-                  Устгах
-                </button>
+                <div class="flex items-center gap-2 shrink-0">
+                  <a
+                    href={`/admin/hero/edit/${s.id}`}
+                    class="text-mwa-burgundy font-bold px-3 py-1.5 rounded-lg border border-mwa-burgundy/40 active:bg-mwa-burgundy/5"
+                  >
+                    Засах
+                  </a>
+                  <button
+                    type="button"
+                    class="text-rose-600 font-bold px-3 py-1.5 rounded-lg border border-rose-200 active:bg-rose-50 disabled:opacity-50"
+                    data-action="delete"
+                    data-id={String(s.id)}
+                    data-title={s.title.replace(/<br\/?>/gi, " ").replace(/\s+/g, " ")}
+                  >
+                    Устгах
+                  </button>
+                </div>
               </div>
             </article>
           ))

@@ -1,0 +1,269 @@
+---
+import AdminLayout from "../../../../layouts/AdminLayout.astro";
+import { loadAdmin } from "../../../../lib/adminAuth";
+import { getHeroSlide } from "../../../../lib/db";
+
+const env = Astro.locals.runtime.env;
+const me = await loadAdmin(env.DB, env.SESSIONS, Astro.request.headers.get("cookie"));
+if (!me) return Astro.redirect("/profile/login?next=/admin/hero");
+
+const id = Number(Astro.params.id);
+const row = Number.isFinite(id) ? await getHeroSlide(env.DB, id) : null;
+if (!row) return Astro.redirect("/admin/hero");
+---
+
+<AdminLayout title="Баннер засах" active="hero">
+  <header class="lg:hidden px-3 pt-6 pb-3 flex items-center bg-white border-b border-gray-100 sticky top-0 z-20">
+    <a href="/admin/hero" aria-label="Буцах" class="p-2">
+      <svg
+        class="h-6 w-6 text-mwa-text-primary"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path d="M15 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+      </svg>
+    </a>
+    <h1 class="flex-1 text-center text-lg font-bold">Баннер засах</h1>
+    <div class="w-10"></div>
+  </header>
+
+  <div class="max-w-2xl mx-auto lg:px-8 lg:py-8">
+    <div class="hidden lg:flex items-center gap-3 mb-6">
+      <a href="/admin/hero" class="text-sm text-mwa-burgundy font-bold">← Буцах</a>
+      <h1 class="text-2xl font-extrabold">Баннер засах</h1>
+    </div>
+
+    <form
+      id="hero-form"
+      class="px-5 lg:px-0 pb-10 bg-white border border-gray-100 rounded-2xl p-4 lg:p-6 space-y-4 shadow-sm"
+      onsubmit="return false"
+      enctype="multipart/form-data"
+      data-slide-id={String(row.id)}
+    >
+      <div>
+        <label class="text-xs font-bold text-mwa-text-secondary mb-1.5 block">
+          Зураг
+        </label>
+        <div
+          class="border-2 border-dashed border-gray-200 rounded-xl p-4 text-center"
+          data-purpose="dropzone"
+        >
+          <input
+            type="file"
+            name="image"
+            accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml"
+            class="hidden"
+            data-image-input
+          />
+          <input type="hidden" name="clear_image" value="0" data-clear-image-input />
+
+          <div data-empty-state class={row.image_url ? "hidden" : ""}>
+            <svg class="w-10 h-10 mx-auto text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+            </svg>
+            <button type="button" class="text-sm font-bold text-mwa-burgundy" data-pick-image>
+              Зураг сонгох
+            </button>
+            <p class="text-[11px] text-gray-400 mt-1">
+              PNG, JPG, WebP · 5MB хүртэл · 16:9 хэмжээ зөвлөмжтэй
+            </p>
+          </div>
+
+          <div class={row.image_url ? "" : "hidden"} data-preview-state>
+            <div class="aspect-[16/9] rounded-lg overflow-hidden bg-gray-100 mb-2">
+              <img
+                src={row.image_url ?? ""}
+                alt=""
+                class="w-full h-full object-cover"
+                data-preview-img
+              />
+            </div>
+            <div class="flex items-center justify-between text-xs">
+              <span class="text-gray-500" data-preview-name>
+                {row.image_url ? "Одоогийн зураг" : ""}
+              </span>
+              <div class="flex items-center gap-3">
+                <button type="button" class="text-mwa-burgundy font-bold" data-replace-image>
+                  Солих
+                </button>
+                <button type="button" class="text-rose-600 font-bold" data-clear-image>
+                  Устгах
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <label class="text-xs font-bold text-mwa-text-secondary mb-1.5 block">
+          Гарчиг <span class="text-rose-500">*</span>
+        </label>
+        <textarea
+          name="title"
+          required
+          maxlength="200"
+          rows="2"
+          class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm leading-snug focus:outline-none focus:border-mwa-burgundy resize-y"
+        >{row.title.replace(/<br\/?>/gi, "\n")}</textarea>
+        <p class="text-[10px] text-gray-400 mt-1">
+          Шинэ мөр оруулахдаа Enter дарна
+        </p>
+      </div>
+
+      <div>
+        <label class="text-xs font-bold text-mwa-text-secondary mb-1.5 block">
+          Дэд гарчиг
+        </label>
+        <textarea
+          name="subtitle"
+          maxlength="300"
+          rows="2"
+          class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm leading-snug focus:outline-none focus:border-mwa-burgundy resize-y"
+        >{(row.subtitle ?? "").replace(/<br\/?>/gi, "\n")}</textarea>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-3">
+        <div>
+          <label class="text-xs font-bold text-mwa-text-secondary mb-1.5 block">
+            Дарахад очих холбоос
+          </label>
+          <input
+            name="href"
+            type="text"
+            value={row.href ?? ""}
+            placeholder="/membership эсвэл https://..."
+            class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-mwa-burgundy font-mono"
+          />
+        </div>
+        <div>
+          <label class="text-xs font-bold text-mwa-text-secondary mb-1.5 block">
+            Эрэмбэ
+          </label>
+          <input
+            name="sort_order"
+            type="number"
+            value={String(row.sort_order)}
+            min="0"
+            class="w-24 bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-mwa-burgundy"
+          />
+        </div>
+      </div>
+
+      <p id="hero-error" class="text-sm text-rose-500 text-center hidden"></p>
+      <p id="hero-success" class="text-sm text-emerald-600 text-center hidden"></p>
+
+      <div class="flex gap-2 pt-2">
+        <a
+          href="/admin/hero"
+          class="flex-1 text-center bg-white border border-gray-200 text-mwa-text-primary font-bold rounded-xl py-3 text-sm active:bg-gray-50"
+        >
+          Цуцлах
+        </a>
+        <button
+          type="submit"
+          class="flex-1 bg-mwa-burgundy text-white font-bold rounded-xl py-3 text-sm active:opacity-80 disabled:opacity-50"
+        >
+          Хадгалах
+        </button>
+      </div>
+    </form>
+  </div>
+</AdminLayout>
+
+<script>
+  import { convertImageToWebp } from "../../../../scripts/imageToWebp";
+
+  interface ApiResponse {
+    ok?: boolean;
+    id?: number;
+    error?: string;
+  }
+
+  const form = document.getElementById("hero-form") as HTMLFormElement | null;
+  const errorEl = document.getElementById("hero-error");
+  const successEl = document.getElementById("hero-success");
+
+  const imageInput = document.querySelector<HTMLInputElement>("[data-image-input]");
+  const clearInput = document.querySelector<HTMLInputElement>("[data-clear-image-input]");
+  const pickBtn = document.querySelector<HTMLButtonElement>("[data-pick-image]");
+  const replaceBtn = document.querySelector<HTMLButtonElement>("[data-replace-image]");
+  const clearBtn = document.querySelector<HTMLButtonElement>("[data-clear-image]");
+  const emptyState = document.querySelector<HTMLElement>("[data-empty-state]");
+  const previewState = document.querySelector<HTMLElement>("[data-preview-state]");
+  const previewImg = document.querySelector<HTMLImageElement>("[data-preview-img]");
+  const previewName = document.querySelector<HTMLElement>("[data-preview-name]");
+
+  pickBtn?.addEventListener("click", () => imageInput?.click());
+  replaceBtn?.addEventListener("click", () => imageInput?.click());
+
+  imageInput?.addEventListener("change", () => {
+    const file = imageInput.files?.[0];
+    if (!file) return;
+    if (!previewImg || !previewName || !emptyState || !previewState) return;
+    previewImg.src = URL.createObjectURL(file);
+    previewName.textContent = `${file.name} (${(file.size / 1024).toFixed(0)} KB)`;
+    emptyState.classList.add("hidden");
+    previewState.classList.remove("hidden");
+    if (clearInput) clearInput.value = "0";
+  });
+
+  clearBtn?.addEventListener("click", () => {
+    if (!imageInput || !emptyState || !previewState || !previewImg || !previewName) return;
+    imageInput.value = "";
+    previewImg.src = "";
+    previewName.textContent = "";
+    emptyState.classList.remove("hidden");
+    previewState.classList.add("hidden");
+    if (clearInput) clearInput.value = "1";
+  });
+
+  form?.addEventListener("submit", async () => {
+    if (!form || !errorEl || !successEl) return;
+    errorEl.classList.add("hidden");
+    successEl.classList.add("hidden");
+
+    const submitBtn = form.querySelector<HTMLButtonElement>('button[type="submit"]');
+    if (submitBtn) submitBtn.disabled = true;
+
+    const slideId = form.dataset.slideId;
+    if (!slideId) return;
+
+    try {
+      const fd = new FormData(form);
+
+      const rawImage = fd.get("image");
+      if (rawImage instanceof File && rawImage.size > 0) {
+        try {
+          const converted = await convertImageToWebp(rawImage);
+          fd.set("image", converted, converted.name);
+        } catch {
+          // keep original on failure
+        }
+      }
+
+      const res = await fetch(`/api/hero-slides/${slideId}`, {
+        method: "PATCH",
+        credentials: "same-origin",
+        body: fd,
+      });
+      const body = (await res.json().catch(() => ({}))) as ApiResponse;
+      if (res.ok && body.ok) {
+        successEl.textContent = "Амжилттай хадгалагдлаа";
+        successEl.classList.remove("hidden");
+        window.setTimeout(() => {
+          window.location.href = "/admin/hero";
+        }, 1000);
+      } else {
+        errorEl.textContent = body.error ?? "Алдаа гарлаа";
+        errorEl.classList.remove("hidden");
+        if (submitBtn) submitBtn.disabled = false;
+      }
+    } catch {
+      errorEl.textContent = "Сүлжээний алдаа";
+      errorEl.classList.remove("hidden");
+      if (submitBtn) submitBtn.disabled = false;
+    }
+  });
+</script>
