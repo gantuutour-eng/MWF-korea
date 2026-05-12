@@ -1,9 +1,8 @@
 ---
-interface Props {
-  hasNotification?: boolean;
-}
+import { loadNotifications } from "../lib/notifications";
 
-const { hasNotification = true } = Astro.props;
+const env = Astro.locals.runtime.env;
+const { items: notifications, latestAt } = await loadNotifications(env.DB);
 
 interface MenuItem {
   label: string;
@@ -82,6 +81,30 @@ const menuSections: MenuSection[] = [
     ],
   },
 ];
+
+function fmtAt(unix: number, kind: "news" | "event"): string {
+  const d = new Date(unix * 1000);
+  const now = Date.now() / 1000;
+  if (kind === "event") {
+    // Event date — show absolute date.
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    const hh = String(d.getHours()).padStart(2, "0");
+    const mm = String(d.getMinutes()).padStart(2, "0");
+    return `${y}.${m}.${day} ${hh}:${mm}`;
+  }
+  // News — relative ("3 цагийн өмнө", "2 өдрийн өмнө")
+  const diff = Math.max(0, Math.floor(now - unix));
+  if (diff < 60) return "Дөнгөж сая";
+  if (diff < 3600) return `${Math.floor(diff / 60)} минутын өмнө`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)} цагийн өмнө`;
+  if (diff < 7 * 86400) return `${Math.floor(diff / 86400)} өдрийн өмнө`;
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}.${m}.${day}`;
+}
 ---
 
 <header
@@ -105,7 +128,14 @@ const menuSections: MenuSection[] = [
   </a>
 
   <div class="flex items-center gap-1">
-    <button aria-label="Мэдэгдэл" class="relative p-2">
+    <button
+      aria-label="Мэдэгдэл"
+      class="relative p-2"
+      data-notif-toggle
+      data-latest-at={String(latestAt)}
+      aria-expanded="false"
+      aria-controls="notif-panel"
+    >
       <svg
         class="h-7 w-7 text-gray-800"
         fill="none"
@@ -119,11 +149,9 @@ const menuSections: MenuSection[] = [
           stroke-linejoin="round"
           stroke-width="1.5"></path>
       </svg>
-      {
-        hasNotification && (
-          <span class="absolute top-2 right-2 w-2.5 h-2.5 bg-mwa-burgundy border-2 border-white rounded-full" />
-        )
-      }
+      <span
+        class="absolute top-2 right-2 w-2.5 h-2.5 bg-mwa-burgundy border-2 border-white rounded-full hidden"
+        data-notif-dot></span>
     </button>
 
     <button
@@ -150,6 +178,128 @@ const menuSections: MenuSection[] = [
   </div>
 </header>
 
+{/* ---------- Notification panel ---------- */}
+<div
+  class="fixed inset-0 z-[60] pointer-events-none"
+  data-notif-root
+  aria-hidden="true"
+>
+  <div
+    class="absolute inset-0 bg-black/40 opacity-0 transition-opacity duration-200"
+    data-notif-backdrop>
+  </div>
+
+  <aside
+    id="notif-panel"
+    class="absolute top-0 right-0 bottom-0 w-80 max-w-[85vw] bg-white shadow-2xl transform translate-x-full transition-transform duration-300 ease-out flex flex-col"
+    data-notif-panel
+    role="dialog"
+    aria-label="Мэдэгдэл"
+  >
+    <div
+      class="px-5 pt-6 pb-4 flex items-center justify-between border-b border-gray-100"
+    >
+      <h2 class="font-extrabold text-base">Мэдэгдэл</h2>
+      <button aria-label="Хаах" class="p-2 -mr-2" data-notif-close>
+        <svg
+          class="h-6 w-6 text-mwa-text-primary"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            d="M6 18L18 6M6 6l12 12"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"></path>
+        </svg>
+      </button>
+    </div>
+
+    <div class="flex-1 overflow-y-auto">
+      {
+        notifications.length === 0 ? (
+          <div class="px-5 py-10 text-center text-sm text-gray-400">
+            Мэдэгдэл алга байна.
+          </div>
+        ) : (
+          <ul class="divide-y divide-gray-100">
+            {notifications.map((n) => (
+              <li>
+                <a
+                  href={n.href}
+                  class="flex items-start gap-3 px-5 py-3 active:bg-gray-50 hover:bg-gray-50 transition"
+                  data-notif-item
+                  data-at={String(n.at)}
+                >
+                  <div class="w-11 h-11 shrink-0 rounded-xl overflow-hidden bg-gray-100 relative flex items-center justify-center">
+                    {n.thumbnail ? (
+                      <img
+                        src={n.thumbnail}
+                        alt=""
+                        loading="lazy"
+                        class="w-full h-full object-cover"
+                      />
+                    ) : n.kind === "event" ? (
+                      <span class="text-lg">📅</span>
+                    ) : (
+                      <span class="text-lg">📰</span>
+                    )}
+                  </div>
+                  <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-1.5 mb-0.5">
+                      <span
+                        class={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                          n.kind === "event"
+                            ? "bg-rose-100 text-rose-700"
+                            : "bg-blue-100 text-blue-700"
+                        }`}
+                      >
+                        {n.kind === "event" ? "Арга хэмжээ" : "Мэдээ"}
+                      </span>
+                      <span class="text-[10px] text-gray-400">
+                        {fmtAt(n.at, n.kind)}
+                      </span>
+                      <span
+                        class="ml-auto w-1.5 h-1.5 rounded-full bg-mwa-burgundy hidden"
+                        data-notif-unread
+                      />
+                    </div>
+                    <div class="text-sm font-semibold leading-tight line-clamp-2 text-mwa-text-primary">
+                      {n.title}
+                    </div>
+                    {n.subtitle && (
+                      <div class="text-[11px] text-gray-500 mt-0.5 line-clamp-1">
+                        {n.subtitle}
+                      </div>
+                    )}
+                  </div>
+                </a>
+              </li>
+            ))}
+          </ul>
+        )
+      }
+    </div>
+
+    <div class="border-t border-gray-100 px-5 py-3 grid grid-cols-2 gap-2">
+      <a
+        href="/news"
+        class="text-center text-xs font-bold text-mwa-burgundy py-2 rounded-xl border border-mwa-burgundy/30 active:bg-mwa-burgundy/5"
+      >
+        Бүх мэдээ
+      </a>
+      <a
+        href="/events"
+        class="text-center text-xs font-bold text-mwa-burgundy py-2 rounded-xl border border-mwa-burgundy/30 active:bg-mwa-burgundy/5"
+      >
+        Бүх арга хэмжээ
+      </a>
+    </div>
+  </aside>
+</div>
+
+{/* ---------- Main side menu ---------- */}
 <div
   class="fixed inset-0 z-[60] pointer-events-none"
   data-menu-root
@@ -227,13 +377,16 @@ const menuSections: MenuSection[] = [
 </div>
 
 <script>
-  const toggle = document.querySelector<HTMLButtonElement>("[data-menu-toggle]");
-  const root = document.querySelector<HTMLElement>("[data-menu-root]");
-  const backdrop = document.querySelector<HTMLElement>("[data-menu-backdrop]");
-  const panel = document.querySelector<HTMLElement>("[data-menu-panel]");
-  const closeBtn = document.querySelector<HTMLButtonElement>("[data-menu-close]");
+  type DrawerEls = {
+    toggle: HTMLButtonElement;
+    root: HTMLElement;
+    backdrop: HTMLElement;
+    panel: HTMLElement;
+    close: HTMLButtonElement;
+  };
 
-  if (toggle && root && backdrop && panel && closeBtn) {
+  function wireDrawer(els: DrawerEls, onOpen?: () => void) {
+    const { toggle, root, backdrop, panel, close } = els;
     const open = () => {
       root.classList.remove("pointer-events-none");
       root.setAttribute("aria-hidden", "false");
@@ -245,9 +398,9 @@ const menuSections: MenuSection[] = [
         panel.classList.add("translate-x-0");
       });
       document.body.style.overflow = "hidden";
+      onOpen?.();
     };
-
-    const close = () => {
+    const doClose = () => {
       backdrop.classList.add("opacity-0");
       backdrop.classList.remove("opacity-100");
       panel.classList.add("translate-x-full");
@@ -259,14 +412,75 @@ const menuSections: MenuSection[] = [
         root.setAttribute("aria-hidden", "true");
       }, 300);
     };
-
     toggle.addEventListener("click", open);
-    closeBtn.addEventListener("click", close);
-    backdrop.addEventListener("click", close);
+    close.addEventListener("click", doClose);
+    backdrop.addEventListener("click", doClose);
     document.addEventListener("keydown", (e) => {
       if (e.key === "Escape" && toggle.getAttribute("aria-expanded") === "true") {
-        close();
+        doClose();
       }
     });
+    return { open, doClose };
+  }
+
+  // ---------- Menu drawer ----------
+  {
+    const toggle = document.querySelector<HTMLButtonElement>("[data-menu-toggle]");
+    const root = document.querySelector<HTMLElement>("[data-menu-root]");
+    const backdrop = document.querySelector<HTMLElement>("[data-menu-backdrop]");
+    const panel = document.querySelector<HTMLElement>("[data-menu-panel]");
+    const close = document.querySelector<HTMLButtonElement>("[data-menu-close]");
+    if (toggle && root && backdrop && panel && close) {
+      wireDrawer({ toggle, root, backdrop, panel, close });
+    }
+  }
+
+  // ---------- Notification drawer ----------
+  {
+    const toggle = document.querySelector<HTMLButtonElement>("[data-notif-toggle]");
+    const root = document.querySelector<HTMLElement>("[data-notif-root]");
+    const backdrop = document.querySelector<HTMLElement>("[data-notif-backdrop]");
+    const panel = document.querySelector<HTMLElement>("[data-notif-panel]");
+    const close = document.querySelector<HTMLButtonElement>("[data-notif-close]");
+    const dot = document.querySelector<HTMLElement>("[data-notif-dot]");
+    const items = document.querySelectorAll<HTMLElement>("[data-notif-item]");
+
+    const SEEN_KEY = "mwa.notif.lastSeenAt";
+
+    function readSeen(): number {
+      try {
+        return Number(localStorage.getItem(SEEN_KEY) ?? "0") || 0;
+      } catch {
+        return 0;
+      }
+    }
+    function writeSeen(unix: number) {
+      try {
+        localStorage.setItem(SEEN_KEY, String(unix));
+      } catch {
+        // storage blocked — fall back silently
+      }
+    }
+
+    if (toggle && root && backdrop && panel && close && dot) {
+      const latestAt = Number(toggle.dataset.latestAt ?? "0") || 0;
+      const seen = readSeen();
+
+      // Show the dot if anything is newer than the last open.
+      if (latestAt > seen) dot.classList.remove("hidden");
+
+      // Mark individual items as "unread" if newer than seen.
+      items.forEach((item) => {
+        const at = Number(item.dataset.at ?? "0") || 0;
+        const unread = item.querySelector<HTMLElement>("[data-notif-unread]");
+        if (unread && at > seen) unread.classList.remove("hidden");
+      });
+
+      wireDrawer({ toggle, root, backdrop, panel, close }, () => {
+        // On open: mark everything as seen and clear the dot.
+        writeSeen(Math.floor(Date.now() / 1000));
+        dot.classList.add("hidden");
+      });
+    }
   }
 </script>
