@@ -8,6 +8,11 @@ const me = await loadAdmin(env.DB, env.SESSIONS, Astro.request.headers.get("cook
 if (!me) return Astro.redirect("/profile/login?next=/admin/hero");
 
 const slides = await listHeroSlides(env.DB);
+
+function withLineBreaks(text: string | null | undefined): string {
+  if (!text) return "";
+  return text.replace(/\r\n|\r|\n/g, "<br/>");
+}
 ---
 
 <AdminLayout title="Үндсэн хуудасны баннер" active="hero">
@@ -87,12 +92,12 @@ const slides = await listHeroSlides(env.DB);
                 <div class="absolute inset-0 p-4 flex flex-col justify-center text-white">
                   <h3
                     class="font-extrabold text-base leading-tight line-clamp-2"
-                    set:html={s.title}
+                    set:html={withLineBreaks(s.title)}
                   />
                   {s.subtitle && (
                     <p
                       class="text-xs opacity-90 mt-1 line-clamp-2"
-                      set:html={s.subtitle}
+                      set:html={withLineBreaks(s.subtitle)}
                     />
                   )}
                 </div>
@@ -115,7 +120,7 @@ const slides = await listHeroSlides(env.DB);
                   class="text-rose-600 font-bold px-3 py-1.5 rounded-lg border border-rose-200 active:bg-rose-50 disabled:opacity-50 shrink-0"
                   data-action="delete"
                   data-id={String(s.id)}
-                  data-title={s.title.replace(/<br\/?>/gi, " ")}
+                  data-title={s.title.replace(/<br\/?>/gi, " ").replace(/\s+/g, " ")}
                 >
                   Устгах
                 </button>
@@ -203,16 +208,16 @@ const slides = await listHeroSlides(env.DB);
           <label class="text-xs font-bold text-mwa-text-secondary mb-1.5 block">
             Гарчиг <span class="text-rose-500">*</span>
           </label>
-          <input
+          <textarea
             name="title"
-            type="text"
             required
             maxlength="200"
-            placeholder="Жнь: Эвлэлдэн нэгдэж&lt;br/&gt;Ирээдүйг бүтээе"
-            class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-mwa-burgundy"
-          />
+            rows="2"
+            placeholder={"Жнь: Эвлэлдэн нэгдэж\nИрээдүйг бүтээе"}
+            class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm leading-snug focus:outline-none focus:border-mwa-burgundy resize-y"
+          ></textarea>
           <p class="text-[10px] text-gray-400 mt-1">
-            Мөр шилжүүлэхдээ <code class="font-mono">&lt;br/&gt;</code> ашиглана
+            Шинэ мөр оруулахдаа Enter дарна
           </p>
         </div>
 
@@ -220,13 +225,13 @@ const slides = await listHeroSlides(env.DB);
           <label class="text-xs font-bold text-mwa-text-secondary mb-1.5 block">
             Дэд гарчиг
           </label>
-          <input
+          <textarea
             name="subtitle"
-            type="text"
             maxlength="300"
-            placeholder="Жнь: 1924 оноос эхтэй&lt;br/&gt;бидний түүх"
-            class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-mwa-burgundy"
-          />
+            rows="2"
+            placeholder={"Жнь: 1924 оноос эхтэй\nбидний түүх"}
+            class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm leading-snug focus:outline-none focus:border-mwa-burgundy resize-y"
+          ></textarea>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-[1fr_auto] gap-3">

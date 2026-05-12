@@ -1,6 +1,5 @@
 ---
 import AppLayout from "../../layouts/AppLayout.astro";
-import NewsCarousel from "../../components/NewsCarousel.astro";
 import NewsGallery from "../../components/NewsGallery.astro";
 import {
   getNews,
@@ -28,7 +27,7 @@ const fallbackImages = row.cover_url ? [row.cover_url] : [];
 const images = galleryImages.length > 0 ? galleryImages : fallbackImages;
 
 const related = await listNews(env.DB, {
-  limit: 5,
+  limit: 6,
   excludeId: row.id,
 });
 
@@ -65,7 +64,7 @@ const initiallySaved = me
   </header>
 
   <article class="pb-10" data-purpose="article">
-    <h1 class="px-5 text-[26px] font-extrabold leading-tight text-blue-800 mb-4">
+    <h1 class="px-5 text-[26px] font-extrabold leading-tight text-mwa-text-primary mb-4">
       {row.title}
     </h1>
 
@@ -140,11 +139,58 @@ const initiallySaved = me
     </div>
   </article>
 
-  {
-    related.length > 0 && (
-      <NewsCarousel items={related} heading="Дараагийн мэдээ" />
-    )
-  }
+  <section
+    class="px-5 mt-8 pb-10"
+    aria-label="Бусад мэдээ"
+    data-purpose="related-news"
+  >
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="font-bold text-base">Бусад мэдээ</h2>
+      <a href="/news" class="text-xs font-semibold text-mwa-burgundy">
+        Бүгдийг харах →
+      </a>
+    </div>
+
+    {
+      related.length === 0 ? (
+        <p class="text-sm text-gray-400">Одоогоор бусад мэдээ алга байна.</p>
+      ) : (
+        <ul class="space-y-3">
+          {related.map((n) => (
+            <li>
+              <a
+                href={`/news/${n.id}`}
+                class="flex items-center gap-3 bg-white border border-gray-100 rounded-2xl p-3 shadow-sm active:opacity-80 hover:border-mwa-burgundy/30 transition"
+              >
+                <div class="w-20 h-20 shrink-0 rounded-xl overflow-hidden bg-gray-100">
+                  {n.cover_url ? (
+                    <img
+                      src={n.cover_url}
+                      alt=""
+                      loading="lazy"
+                      class="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div class="w-full h-full bg-mwa-burgundy/10" />
+                  )}
+                </div>
+                <div class="flex-1 min-w-0">
+                  <div class="text-sm font-bold leading-snug line-clamp-2 text-mwa-text-primary">
+                    {n.title}
+                  </div>
+                  {n.subtitle && (
+                    <div class="text-xs text-gray-500 mt-1 line-clamp-2">
+                      {n.subtitle}
+                    </div>
+                  )}
+                </div>
+              </a>
+            </li>
+          ))}
+        </ul>
+      )
+    }
+  </section>
 </AppLayout>
 
 <script>

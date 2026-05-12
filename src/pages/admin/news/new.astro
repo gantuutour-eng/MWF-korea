@@ -332,8 +332,8 @@ if (!me) return Astro.redirect("/profile/login?next=/admin/news/new");
           successEl.classList.remove("hidden");
         }
         window.setTimeout(() => {
-          window.location.href = `/news/${body.id}`;
-        }, 800);
+          window.location.href = "/admin";
+        }, 1200);
       } else {
         showError(body.error ?? "Алдаа гарлаа");
         if (submitBtn) submitBtn.disabled = false;

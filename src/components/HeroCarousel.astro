@@ -12,6 +12,13 @@ interface Props {
 }
 
 const { slides, autoplayMs = 5000 } = Astro.props;
+
+// Admin can either type a literal `<br/>` or just press Enter — both should
+// render as a line break in the banner.
+function withLineBreaks(text: string | null | undefined): string {
+  if (!text) return "";
+  return text.replace(/\r\n|\r|\n/g, "<br/>");
+}
 ---
 
 <section class="px-5 mb-8" data-purpose="hero-section">
@@ -32,7 +39,7 @@ const { slides, autoplayMs = 5000 } = Astro.props;
               href={slide.href}
               class="snap-center shrink-0 w-full px-1"
             >
-              <div class="bg-mwa-burgundy rounded-[24px] relative overflow-hidden min-h-[220px] flex flex-col justify-center text-white">
+              <div class="bg-mwa-burgundy rounded-[24px] relative overflow-hidden min-h-[220px] flex flex-col text-white">
                 {slide.image_url ? (
                   <>
                     <img
@@ -40,7 +47,7 @@ const { slides, autoplayMs = 5000 } = Astro.props;
                       alt=""
                       class="absolute inset-0 w-full h-full object-cover"
                     />
-                    <div class="absolute inset-0 bg-gradient-to-br from-black/55 via-black/25 to-black/55" />
+                    <div class="absolute inset-0 bg-gradient-to-t from-mwa-burgundy/95 via-mwa-burgundy/55 to-mwa-burgundy/0" />
                   </>
                 ) : (
                   <>
@@ -79,15 +86,15 @@ const { slides, autoplayMs = 5000 } = Astro.props;
                     </div>
                   </>
                 )}
-                <div class="relative z-10 p-6 space-y-4">
+                <div class="relative z-10 mt-auto p-6 space-y-2">
                   <h1
                     class="text-2xl font-bold leading-tight drop-shadow-sm"
-                    set:html={slide.title}
+                    set:html={withLineBreaks(slide.title)}
                   />
                   {slide.subtitle && (
                     <p
                       class="text-sm font-light opacity-90 drop-shadow-sm"
-                      set:html={slide.subtitle}
+                      set:html={withLineBreaks(slide.subtitle)}
                     />
                   )}
                 </div>
