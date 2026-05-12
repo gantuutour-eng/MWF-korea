@@ -1,0 +1,164 @@
+---
+import AppLayout from "../layouts/AppLayout.astro";
+
+const lastUpdated = "2026 оны 5-р сарын 12";
+---
+
+<AppLayout title="Нууцлалын бодлого" showHeader={false}>
+  <header
+    class="px-3 pt-6 pb-3 flex items-center bg-white border-b border-gray-100 sticky top-0 z-20"
+  >
+    <a href="/" aria-label="Буцах" class="p-2">
+      <svg
+        class="h-6 w-6 text-mwa-text-primary"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          d="M15 19l-7-7 7-7"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"></path>
+      </svg>
+    </a>
+    <h1 class="flex-1 text-center text-lg font-bold">Нууцлалын бодлого</h1>
+    <div class="w-10"></div>
+  </header>
+
+  <article class="px-5 py-6 max-w-3xl lg:mx-auto">
+    <p class="text-xs text-gray-400 mb-6">
+      Сүүлд шинэчилсэн: {lastUpdated}
+    </p>
+
+    <p class="text-sm text-mwa-text-secondary leading-relaxed mb-8">
+      Монголын эмэгтэйчүүдийн холбооны БНСУ дахь салбар зөвлөл (цаашид
+      "Бид" гэх) нь хэрэглэгчдийн хувийн мэдээллийг хамгаалах асуудлыг
+      нэн чухалд үздэг. Энэхүү бодлогод бид ямар мэдээлэл цуглуулдаг,
+      хэрхэн ашигладаг, хадгалдаг, хамгаалдаг талаар тайлбарласан болно.
+    </p>
+
+    <section class="mb-6">
+      <h2 class="font-bold text-base mb-2">1. Цуглуулагдах мэдээлэл</h2>
+      <ul class="text-sm text-mwa-text-secondary space-y-1.5 leading-relaxed pl-4 list-disc">
+        <li>Бүртгэлийн мэдээлэл: имэйл хаяг, нэр, утасны дугаар (заавал биш)</li>
+        <li>
+          Google-р нэвтэрсэн тохиолдолд: Google профайлын нэр, имэйл, профайл
+          зураг
+        </li>
+        <li>Гишүүнчлэлийн төлбөрийн бүртгэл: захиалгын дугаар, дүн, төлсөн огноо</li>
+        <li>Чат, зурвасын агуулга: админтай харилцсан зурвасууд</li>
+        <li>Техникийн мэдээлэл: нэвтэрсэн цаг, IP хаяг (логд хадгалагдана)</li>
+      </ul>
+    </section>
+
+    <section class="mb-6">
+      <h2 class="font-bold text-base mb-2">2. Мэдээллийг ашиглах зорилго</h2>
+      <ul class="text-sm text-mwa-text-secondary space-y-1.5 leading-relaxed pl-4 list-disc">
+        <li>Гишүүний бүртгэл, нэвтрэлт, хэрэглэгчийн үйлчилгээ үзүүлэх</li>
+        <li>Гишүүнчлэлийн төлбөр баталгаажуулах, эрхийн хугацаа хянах</li>
+        <li>Чат болон зурвасаар дамжуулан хэрэглэгчдэд хариу өгөх</li>
+        <li>Үйл ажиллагаа, шинэ мэдээ, сургалтын тухай мэдэгдэх</li>
+        <li>Үйлчилгээний чанарыг сайжруулах, статистик гаргах</li>
+      </ul>
+    </section>
+
+    <section class="mb-6">
+      <h2 class="font-bold text-base mb-2">3. Гуравдагч этгээдтэй хуваалцах</h2>
+      <p class="text-sm text-mwa-text-secondary leading-relaxed mb-2">
+        Бид хэрэглэгчийн мэдээллийг дараах үйлчилгээ үзүүлэгчдээс бусад
+        гуравдагч этгээдтэй хуваалцахгүй:
+      </p>
+      <ul class="text-sm text-mwa-text-secondary space-y-1.5 leading-relaxed pl-4 list-disc">
+        <li>
+          <strong>Google LLC</strong>: Google-р нэвтрэх үед хэрэглэгчийн
+          сонголтоор имэйл, нэр, профайл зураг хүлээн авна.
+        </li>
+        <li>
+          <strong>Cloudflare, Inc.</strong>: Сайтын хост, өгөгдлийн сан, файлын
+          хадгалалт. Cloudflare-ийн серверт мэдээлэл шифрлэгдсэн байдлаар
+          хадгалагдана.
+        </li>
+        <li>
+          <strong>Банк</strong>: Гишүүнчлэлийн төлбөрийн дансаар шилжүүлэг
+          хийхэд банкны мэдээлэл харилцаа холбоо үүсэх боловч картын мэдээлэл
+          бид хадгалахгүй.
+        </li>
+        <li>
+          <strong>Хуулийн дагуу шаардлагатай тохиолдолд</strong>: Шүүх,
+          мөрдөн байцаах байгууллагын хүсэлтээр.
+        </li>
+      </ul>
+    </section>
+
+    <section class="mb-6">
+      <h2 class="font-bold text-base mb-2">4. Мэдээлэл хадгалах хугацаа</h2>
+      <p class="text-sm text-mwa-text-secondary leading-relaxed">
+        Гишүүнчлэл идэвхтэй байх хугацаанд хэрэглэгчийн мэдээллийг хадгална.
+        Бүртгэл цуцлагдсаны дараа санхүүгийн болон хуулийн бүртгэлийн
+        шаардлагын дагуу <strong>5 жил</strong> хадгалагдаж, дараа нь
+        бүрэн устгагдана.
+      </p>
+    </section>
+
+    <section class="mb-6">
+      <h2 class="font-bold text-base mb-2">5. Аюулгүй байдал</h2>
+      <ul class="text-sm text-mwa-text-secondary space-y-1.5 leading-relaxed pl-4 list-disc">
+        <li>Бүх харилцаа HTTPS/TLS шифрлэлтээр хамгаалагдана</li>
+        <li>Нууц үг PBKDF2-SHA256 алгоритмаар хашлагдан хадгалагдана</li>
+        <li>Сесс түлхүүр зөвхөн HTTP-only cookie хэлбэрээр илгээгдэнэ</li>
+        <li>Зөвхөн админ эрхтэй ажилтнууд хэрэглэгчийн мэдээлэлд хандана</li>
+      </ul>
+    </section>
+
+    <section class="mb-6">
+      <h2 class="font-bold text-base mb-2">6. Хэрэглэгчийн эрх</h2>
+      <p class="text-sm text-mwa-text-secondary leading-relaxed mb-2">
+        Хэрэглэгч дараах эрхтэй:
+      </p>
+      <ul class="text-sm text-mwa-text-secondary space-y-1.5 leading-relaxed pl-4 list-disc">
+        <li>Өөрийн мэдээллийг үзэх, шинэчлэх</li>
+        <li>Бүртгэлээ цуцлах, мэдээллийг устгуулах</li>
+        <li>Мэдээллийг боловсруулахыг зөвшөөрөхөөс татгалзах</li>
+        <li>Гомдол гаргах</li>
+      </ul>
+      <p class="text-sm text-mwa-text-secondary leading-relaxed mt-2">
+        Эрхийнхээ дагуу шаардахдаа доорх холбоо барих хаягаар бидэнтэй
+        холбогдоно уу.
+      </p>
+    </section>
+
+    <section class="mb-6">
+      <h2 class="font-bold text-base mb-2">7. Күүки (Cookies)</h2>
+      <p class="text-sm text-mwa-text-secondary leading-relaxed">
+        Сайт нэвтрэлтийн сесс хадгалах зорилгоор HTTP-only cookie ашигладаг.
+        Зар сурталчилгаа болон гуравдагч талын хяналтын күүки ашигладаггүй.
+      </p>
+    </section>
+
+    <section class="mb-6">
+      <h2 class="font-bold text-base mb-2">8. Бодлогын өөрчлөлт</h2>
+      <p class="text-sm text-mwa-text-secondary leading-relaxed">
+        Энэхүү бодлогод өөрчлөлт орсон тохиолдолд сайтад мэдэгдэх ба
+        чухал өөрчлөлтийг гишүүдийн имэйл хаягаар мэдэгдэнэ.
+      </p>
+    </section>
+
+    <section class="mb-8 bg-mwa-burgundy/5 border border-mwa-burgundy/20 rounded-2xl p-4">
+      <h2 class="font-bold text-base mb-2 text-mwa-burgundy">Холбоо барих</h2>
+      <p class="text-sm text-mwa-text-secondary leading-relaxed">
+        Нууцлалын бодлоготой холбоотой асуулт, гомдол байвал:
+      </p>
+      <ul class="text-sm text-mwa-text-primary space-y-1 mt-2">
+        <li>📧 <strong>contact@mwf.co.kr</strong></li>
+        <li>💬 Сайтын <a href="/chat" class="text-mwa-burgundy underline">Чат</a> цонхоор</li>
+      </ul>
+    </section>
+
+    <div class="flex items-center justify-center gap-3 text-xs text-gray-400 pt-4 border-t border-gray-100">
+      <a href="/terms" class="hover:text-mwa-burgundy">Үйлчилгээний нөхцөл</a>
+      <span>·</span>
+      <a href="/" class="hover:text-mwa-burgundy">Нүүр хуудас</a>
+    </div>
+  </article>
+</AppLayout>

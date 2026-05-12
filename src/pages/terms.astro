@@ -1,0 +1,188 @@
+---
+import AppLayout from "../layouts/AppLayout.astro";
+
+const lastUpdated = "2026 оны 5-р сарын 12";
+---
+
+<AppLayout title="Үйлчилгээний нөхцөл" showHeader={false}>
+  <header
+    class="px-3 pt-6 pb-3 flex items-center bg-white border-b border-gray-100 sticky top-0 z-20"
+  >
+    <a href="/" aria-label="Буцах" class="p-2">
+      <svg
+        class="h-6 w-6 text-mwa-text-primary"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          d="M15 19l-7-7 7-7"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"></path>
+      </svg>
+    </a>
+    <h1 class="flex-1 text-center text-lg font-bold">Үйлчилгээний нөхцөл</h1>
+    <div class="w-10"></div>
+  </header>
+
+  <article class="px-5 py-6 max-w-3xl lg:mx-auto">
+    <p class="text-xs text-gray-400 mb-6">
+      Сүүлд шинэчилсэн: {lastUpdated}
+    </p>
+
+    <p class="text-sm text-mwa-text-secondary leading-relaxed mb-8">
+      Энэхүү үйлчилгээний нөхцөл нь Монголын эмэгтэйчүүдийн холбооны БНСУ
+      дахь салбар зөвлөл (цаашид "Бид" гэх) болон сайт, аппликейшний
+      хэрэглэгч (цаашид "Та" гэх) хооронд үүсэх харилцааг зохицуулна.
+      Сайтад бүртгүүлснээр та энэхүү нөхцөлийг бүрэн хүлээн зөвшөөрсөнд
+      тооцогдоно.
+    </p>
+
+    <section class="mb-6">
+      <h2 class="font-bold text-base mb-2">1. Үйлчилгээний тухай</h2>
+      <p class="text-sm text-mwa-text-secondary leading-relaxed">
+        Бид БНСУ-д амьдарч буй монгол эмэгтэйчүүд, тэдний гэр бүлд
+        зориулсан мэдээлэл, сургалт, арга хэмжээ, харилцан туслалцааны
+        платформыг ажиллуулдаг. Үйлчилгээ нь олон нийтийн, ашгийн бус
+        зорилгод үндэслэнэ.
+      </p>
+    </section>
+
+    <section class="mb-6">
+      <h2 class="font-bold text-base mb-2">2. Бүртгэл, нэвтрэлт</h2>
+      <ul class="text-sm text-mwa-text-secondary space-y-1.5 leading-relaxed pl-4 list-disc">
+        <li>
+          Үнэн зөв мэдээлэл оруулж бүртгүүлэх. Худал, бусдын мэдээллээр
+          бүртгүүлсэн нь илэрвэл бүртгэл цуцлагдана.
+        </li>
+        <li>
+          Бүртгэлийн имэйл, нууц үгийг өөрөө хариуцаж хадгална.
+          Гуравдагч этгээдэд алдагдсан тохиолдолд нэн даруй бидэнд мэдэгдэх.
+        </li>
+        <li>Нэг хүн нэг бүртгэл л үүсгэх.</li>
+      </ul>
+    </section>
+
+    <section class="mb-6">
+      <h2 class="font-bold text-base mb-2">3. Гишүүнчлэл, төлбөр</h2>
+      <ul class="text-sm text-mwa-text-secondary space-y-1.5 leading-relaxed pl-4 list-disc">
+        <li>
+          Гишүүнчлэлийн хураамж нь <strong>сард 10,000₮</strong> бөгөөд
+          6 сар (60,000₮) болон 1 жилийн (120,000₮) хугацаатай эрх
+          худалдан авах боломжтой.
+        </li>
+        <li>
+          Төлбөрийн арга: <strong>дансаар шилжүүлэг</strong>. Захиалгын
+          дугаарыг гүйлгээний утга хэсэгт оруулна.
+        </li>
+        <li>
+          Эрхийн хугацаа төлбөр баталгаажсан өдрөөс эхэлж тоологдоно
+          (Админ ажлын нэг өдрийн дотор баталгаажуулна).
+        </li>
+        <li>
+          <strong>Буцаан олгох:</strong> Эрхийн хугацаа эхэлсний дараа
+          төлбөр буцаан олгогдохгүй. Эрх эхлээгүй байх үед буюу төлбөр
+          баталгаажуулагдаагүй үед бүрэн буцаан олгогдоно.
+        </li>
+        <li>
+          Эрхийн хугацаа дуусахад автоматаар цуцлагдана. Сунгахдаа шинээр
+          захиалга үүсгэнэ.
+        </li>
+      </ul>
+    </section>
+
+    <section class="mb-6">
+      <h2 class="font-bold text-base mb-2">4. Хориглох үйлдлүүд</h2>
+      <p class="text-sm text-mwa-text-secondary leading-relaxed mb-2">
+        Дараах үйлдлүүдийг хатуу хориглоно:
+      </p>
+      <ul class="text-sm text-mwa-text-secondary space-y-1.5 leading-relaxed pl-4 list-disc">
+        <li>Бусдыг доромжлох, гүтгэх, заналхийлэх агуулга оруулах</li>
+        <li>Хууль бус, садар самуун, хүчирхийллийн агуулга</li>
+        <li>Спам, зар, олон удаагийн давтсан зурвас илгээх</li>
+        <li>Зохиогчийн эрхтэй контентыг зөвшөөрөлгүйгээр хуваалцах</li>
+        <li>
+          Системийг хакердах, эмзэг талыг ашиглах, өөр хэрэглэгчийн
+          бүртгэлд хандах оролдлого
+        </li>
+        <li>Албан бус арилжаа, луйврын зорилгоор сайтыг ашиглах</li>
+      </ul>
+    </section>
+
+    <section class="mb-6">
+      <h2 class="font-bold text-base mb-2">5. Хэрэглэгчийн контент</h2>
+      <p class="text-sm text-mwa-text-secondary leading-relaxed">
+        Чат, зурвас зэрэгт хэрэглэгчийн оруулсан агуулгын зохиогчийн эрх
+        нь тухайн хэрэглэгчид хадгалагдана. Гэхдээ бид уг агуулгыг
+        үйлчилгээ үзүүлэх, харуулах, нөөцлөх зорилгоор ашиглах эрхтэй.
+      </p>
+    </section>
+
+    <section class="mb-6">
+      <h2 class="font-bold text-base mb-2">6. Үйлчилгээ зогсоох</h2>
+      <ul class="text-sm text-mwa-text-secondary space-y-1.5 leading-relaxed pl-4 list-disc">
+        <li>
+          Дээрх хориглосон үйлдэл гаргасан хэрэглэгчийн эрхийг
+          мэдэгдэлгүйгээр зогсоох эрхтэй.
+        </li>
+        <li>
+          Хэрэглэгч өөрөө бүртгэлээ цуцлах хүсэлт гаргаж болно.
+        </li>
+        <li>
+          Бид техникийн засвар, шинэчлэлийн зорилгоор үйлчилгээг түр
+          зогсоох эрхтэй (урьдчилан мэдэгдэх боломжгүй тохиолдол байж болно).
+        </li>
+      </ul>
+    </section>
+
+    <section class="mb-6">
+      <h2 class="font-bold text-base mb-2">7. Хариуцлагын хязгаарлалт</h2>
+      <p class="text-sm text-mwa-text-secondary leading-relaxed">
+        Бид үйлчилгээг "одоо байгаа байдлаар" нь үзүүлдэг ба үйлчилгээний
+        тасалдал, мэдээллийн алдагдал зэргээс үүдсэн шууд бус, дагалдах
+        хохирлыг хариуцахгүй. Хууль ёсны хариуцлагын дээд хэмжээ нь
+        тухайн хэрэглэгчийн сүүлийн 12 сард төлсөн гишүүнчлэлийн дүнгээр
+        хязгаарлагдана.
+      </p>
+    </section>
+
+    <section class="mb-6">
+      <h2 class="font-bold text-base mb-2">8. Нөхцөлийн өөрчлөлт</h2>
+      <p class="text-sm text-mwa-text-secondary leading-relaxed">
+        Бид энэхүү нөхцөлд өөрчлөлт оруулах эрхтэй. Чухал өөрчлөлтийг
+        дор хаяж 14 хоногийн өмнө сайтад мэдэгдэж, гишүүдийн имэйлээр
+        мэдэгдэх болно. Өөрчлөлт хүчин төгөлдөр болсны дараа сайтыг
+        үргэлжлүүлэн ашиглах нь шинэ нөхцөлийг хүлээн зөвшөөрсөнд
+        тооцогдоно.
+      </p>
+    </section>
+
+    <section class="mb-6">
+      <h2 class="font-bold text-base mb-2">9. Хууль тогтоомж, маргаан шийдвэрлэх</h2>
+      <p class="text-sm text-mwa-text-secondary leading-relaxed">
+        Энэхүү нөхцөл нь <strong>БНСУ-ын хууль тогтоомжид</strong>
+        захирагдана. Талуудын хооронд гарсан маргааныг эв зүйгээр
+        шийдвэрлэх ба эв зүйгээр шийдвэрлэх боломжгүй тохиолдолд
+        <strong>Сөүлийн төв шүүхээр</strong> шийдвэрлүүлнэ.
+      </p>
+    </section>
+
+    <section class="mb-8 bg-mwa-burgundy/5 border border-mwa-burgundy/20 rounded-2xl p-4">
+      <h2 class="font-bold text-base mb-2 text-mwa-burgundy">Холбоо барих</h2>
+      <p class="text-sm text-mwa-text-secondary leading-relaxed">
+        Үйлчилгээний нөхцөлтэй холбоотой асуулт байвал:
+      </p>
+      <ul class="text-sm text-mwa-text-primary space-y-1 mt-2">
+        <li>📧 <strong>contact@mwf.co.kr</strong></li>
+        <li>💬 Сайтын <a href="/chat" class="text-mwa-burgundy underline">Чат</a> цонхоор</li>
+      </ul>
+    </section>
+
+    <div class="flex items-center justify-center gap-3 text-xs text-gray-400 pt-4 border-t border-gray-100">
+      <a href="/privacy" class="hover:text-mwa-burgundy">Нууцлалын бодлого</a>
+      <span>·</span>
+      <a href="/" class="hover:text-mwa-burgundy">Нүүр хуудас</a>
+    </div>
+  </article>
+</AppLayout>
