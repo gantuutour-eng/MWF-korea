@@ -1,5 +1,6 @@
 ---
 import "../styles/global.css";
+import AdminBottomNav from "../components/AdminBottomNav.astro";
 
 type AdminNavKey =
   | "dashboard"
@@ -17,6 +18,21 @@ interface Props {
 }
 
 const { title = "Админ панель", active = "dashboard" } = Astro.props;
+
+// Map admin nav key to the 5-tab mobile bottom nav. Sections that aren't on
+// the bottom bar (news/portfolio/hero) keep dashboard highlighted as fallback.
+type MobileTab = "dashboard" | "payments" | "chat" | "events" | "users";
+const mobileTabMap: Record<AdminNavKey, MobileTab> = {
+  dashboard: "dashboard",
+  payments: "payments",
+  chat: "chat",
+  events: "events",
+  users: "users",
+  news: "dashboard",
+  portfolio: "dashboard",
+  hero: "dashboard",
+};
+const mobileActive = mobileTabMap[active];
 
 const nav: { key: AdminNavKey; label: string; href: string; icon: string }[] = [
   {
@@ -158,10 +174,12 @@ const nav: { key: AdminNavKey; label: string; href: string; icon: string }[] = [
     </aside>
 
     <main
-      class="lg:pl-64 min-h-screen"
+      class="lg:pl-64 min-h-screen pb-24 lg:pb-0"
       data-purpose="admin-main"
     >
       <slot />
     </main>
+
+    <AdminBottomNav active={mobileActive} />
   </body>
 </html>
