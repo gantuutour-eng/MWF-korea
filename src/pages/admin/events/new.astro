@@ -101,6 +101,9 @@ const types: { value: EventType; label: string }[] = EVENT_TYPES.map((t) => ({
         />
       </div>
     </div>
+    <p class="text-[11px] text-gray-400 -mt-3">
+      Цаг нь Сөүлийн цагаар хадгалагдана.
+    </p>
 
     <div>
       <label class="text-xs font-bold text-mwa-text-secondary mb-1.5 block">
@@ -213,6 +216,7 @@ const types: { value: EventType; label: string }[] = EVENT_TYPES.map((t) => ({
 
 <script>
   import { convertImageToWebp } from "../../../scripts/imageToWebp";
+  import { fromDateTimeLocalValue } from "../../../lib/datetime";
 
   interface ApiResponse {
     ok?: boolean;
@@ -255,9 +259,8 @@ const types: { value: EventType; label: string }[] = EVENT_TYPES.map((t) => ({
 
   function toUnix(value: string): number | undefined {
     if (!value) return undefined;
-    const ms = new Date(value).getTime();
-    if (!Number.isFinite(ms)) return undefined;
-    return Math.floor(ms / 1000);
+    const unix = fromDateTimeLocalValue(value);
+    return Number.isFinite(unix) ? unix : undefined;
   }
 
   form?.addEventListener("submit", async () => {

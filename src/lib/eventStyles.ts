@@ -53,15 +53,5 @@ export function styleFor(type: EventType): EventTypeStyle {
   return styles[type] ?? styles.event;
 }
 
-export function formatDate(unix: number): string {
-  const d = new Date(unix * 1000);
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}.${m}.${day}`;
-}
-
-export function formatTime(unix: number): string {
-  const d = new Date(unix * 1000);
-  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-}
+// Times are normalized to Asia/Seoul — see lib/datetime.ts for the why.
+export { formatDate, formatTime } from "./datetime";

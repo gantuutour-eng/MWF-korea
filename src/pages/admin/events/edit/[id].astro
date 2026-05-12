@@ -3,6 +3,7 @@ import AdminLayout from "../../../../layouts/AdminLayout.astro";
 import { loadAdmin } from "../../../../lib/adminAuth";
 import { getEvent, EVENT_TYPES, type EventType } from "../../../../lib/db";
 import { styleFor } from "../../../../lib/eventStyles";
+import { toDateTimeLocalValue } from "../../../../lib/datetime";
 
 const env = Astro.locals.runtime.env;
 const me = await loadAdmin(env.DB, env.SESSIONS, Astro.request.headers.get("cookie"));
@@ -17,15 +18,9 @@ const types: { value: EventType; label: string }[] = EVENT_TYPES.map((t) => ({
   label: styleFor(t).label,
 }));
 
-function toLocalInput(unix: number): string {
-  // Render unix-seconds in the user's local TZ for a <input type="datetime-local">.
-  const d = new Date(unix * 1000);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
-const startLocal = toLocalInput(row.start_at);
-const endLocal = row.end_at ? toLocalInput(row.end_at) : "";
+// Pre-fill in Seoul time so admins anywhere see the same wall clock they saved.
+const startLocal = toDateTimeLocalValue(row.start_at);
+const endLocal = row.end_at ? toDateTimeLocalValue(row.end_at) : "";
 ---
 
 <AdminLayout title="Арга хэмжээ засах" active="events">
@@ -221,6 +216,7 @@ const endLocal = row.end_at ? toLocalInput(row.end_at) : "";
 
 <script>
   import { convertImageToWebp } from "../../../../scripts/imageToWebp";
+  import { fromDateTimeLocalValue } from "../../../../lib/datetime";
 
   interface ApiResponse {
     ok?: boolean;
@@ -269,9 +265,8 @@ const endLocal = row.end_at ? toLocalInput(row.end_at) : "";
 
   function toUnix(value: string): number | undefined {
     if (!value) return undefined;
-    const ms = new Date(value).getTime();
-    if (!Number.isFinite(ms)) return undefined;
-    return Math.floor(ms / 1000);
+    const unix = fromDateTimeLocalValue(value);
+    return Number.isFinite(unix) ? unix : undefined;
   }
 
   form?.addEventListener("submit", async () => {

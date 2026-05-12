@@ -7,6 +7,7 @@ import {
 } from "../../lib/db";
 import { loadCurrentUser } from "../../lib/auth";
 import { styleFor, formatDate, formatTime } from "../../lib/eventStyles";
+import { getWeekday } from "../../lib/datetime";
 
 const env = Astro.locals.runtime.env;
 const id = Number(Astro.params.id);
@@ -34,13 +35,11 @@ const { prev, next } = await getAdjacentEvents(env.DB, {
 });
 
 const style = styleFor(row.type);
-const startDate = new Date(row.start_at * 1000);
-const endDate = row.end_at ? new Date(row.end_at * 1000) : null;
 const weekdayLabels = ["Ня", "Да", "Мя", "Лх", "Пү", "Ба", "Бя"];
-const startWeekday = weekdayLabels[startDate.getDay()];
+const startWeekday = weekdayLabels[getWeekday(row.start_at)];
 const dateLine = `${formatDate(row.start_at)} (${startWeekday})`;
-const timeLine = endDate
-  ? `${formatTime(row.start_at)} – ${formatTime(row.end_at!)}`
+const timeLine = row.end_at
+  ? `${formatTime(row.start_at)} – ${formatTime(row.end_at)}`
   : formatTime(row.start_at);
 
 const prevStyle = prev ? styleFor(prev.type) : null;

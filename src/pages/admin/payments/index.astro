@@ -7,6 +7,7 @@ import {
 } from "../../../lib/db";
 import { loadAdmin } from "../../../lib/adminAuth";
 import { formatTugrik, getPlan } from "../../../lib/membership";
+import { formatDate as fmtDateKr, formatDateTime as fmtDateTimeKr } from "../../../lib/datetime";
 
 const env = Astro.locals.runtime.env;
 const me = await loadAdmin(
@@ -57,17 +58,8 @@ function buildHref(status: string | undefined): string {
   return qs ? `/admin/payments?${qs}` : "/admin/payments";
 }
 
-function fmtDateTime(unix: number): string {
-  const d = new Date(unix * 1000);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
-function fmtDate(unix: number): string {
-  const d = new Date(unix * 1000);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())}`;
-}
+const fmtDateTime = fmtDateTimeKr;
+const fmtDate = fmtDateKr;
 
 const statusBadge: Record<string, string> = {
   pending: "bg-amber-50 text-amber-700 border border-amber-200",

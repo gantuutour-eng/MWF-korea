@@ -416,6 +416,21 @@ export async function createEvent(
   return result.meta.last_row_id;
 }
 
+/** Events whose start_at falls within [startUnix, endUnix). */
+export async function listEventsInRange(
+  db: D1Database,
+  startUnix: number,
+  endUnix: number,
+): Promise<EventRow[]> {
+  const { results } = await db
+    .prepare(
+      `SELECT ${EVENT_COLS} FROM events WHERE start_at >= ?1 AND start_at < ?2 ORDER BY start_at ASC`,
+    )
+    .bind(startUnix, endUnix)
+    .all<EventRow>();
+  return results ?? [];
+}
+
 export async function deleteEvent(
   db: D1Database,
   id: number,

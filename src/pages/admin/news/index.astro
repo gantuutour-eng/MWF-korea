@@ -2,20 +2,13 @@
 import AdminLayout from "../../../layouts/AdminLayout.astro";
 import { loadAdmin } from "../../../lib/adminAuth";
 import { listNews } from "../../../lib/db";
+import { formatDate as fmtDate } from "../../../lib/datetime";
 
 const env = Astro.locals.runtime.env;
 const me = await loadAdmin(env.DB, env.SESSIONS, Astro.request.headers.get("cookie"));
 if (!me) return Astro.redirect("/profile/login?next=/admin/news");
 
 const rows = await listNews(env.DB, { limit: 200 });
-
-function fmtDate(unix: number): string {
-  const d = new Date(unix * 1000);
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}.${m}.${day}`;
-}
 
 const HOME_LIMIT = 6;
 ---

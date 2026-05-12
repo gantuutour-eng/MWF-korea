@@ -1,5 +1,6 @@
 ---
 import { loadNotifications } from "../lib/notifications";
+import { formatDateTime as fmtDateTimeKr } from "../lib/datetime";
 
 const env = Astro.locals.runtime.env;
 const { items: notifications, latestAt } = await loadNotifications(env.DB);
@@ -83,27 +84,18 @@ const menuSections: MenuSection[] = [
 ];
 
 function fmtAt(unix: number, kind: "news" | "event"): string {
-  const d = new Date(unix * 1000);
-  const now = Date.now() / 1000;
   if (kind === "event") {
-    // Event date — show absolute date.
-    const y = d.getFullYear();
-    const m = String(d.getMonth() + 1).padStart(2, "0");
-    const day = String(d.getDate()).padStart(2, "0");
-    const hh = String(d.getHours()).padStart(2, "0");
-    const mm = String(d.getMinutes()).padStart(2, "0");
-    return `${y}.${m}.${day} ${hh}:${mm}`;
+    // Event date — absolute, formatted in Asia/Seoul.
+    return fmtDateTimeKr(unix);
   }
-  // News — relative ("3 цагийн өмнө", "2 өдрийн өмнө")
+  // News — relative ("3 цагийн өмнө"), fall back to Seoul date for older entries.
+  const now = Date.now() / 1000;
   const diff = Math.max(0, Math.floor(now - unix));
   if (diff < 60) return "Дөнгөж сая";
   if (diff < 3600) return `${Math.floor(diff / 60)} минутын өмнө`;
   if (diff < 86400) return `${Math.floor(diff / 3600)} цагийн өмнө`;
   if (diff < 7 * 86400) return `${Math.floor(diff / 86400)} өдрийн өмнө`;
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}.${m}.${day}`;
+  return fmtDateTimeKr(unix).slice(0, 10);
 }
 ---
 

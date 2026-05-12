@@ -4,6 +4,7 @@ import AdminPaymentsTabs from "../../../components/AdminPaymentsTabs.astro";
 import { listActivePaidMembers } from "../../../lib/db";
 import { loadAdmin } from "../../../lib/adminAuth";
 import { formatTugrik, getPlan } from "../../../lib/membership";
+import { formatDate as fmtDateKr } from "../../../lib/datetime";
 
 const env = Astro.locals.runtime.env;
 const me = await loadAdmin(env.DB, env.SESSIONS, Astro.request.headers.get("cookie"));
@@ -22,11 +23,7 @@ const filtered = q
     })
   : members;
 
-function fmtDate(unix: number): string {
-  const d = new Date(unix * 1000);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}.${pad(d.getMonth() + 1)}.${pad(d.getDate())}`;
-}
+const fmtDate = fmtDateKr;
 
 const now = Math.floor(Date.now() / 1000);
 function daysRemaining(endsAt: number): number {

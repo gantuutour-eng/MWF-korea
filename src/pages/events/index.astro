@@ -1,19 +1,173 @@
 ---
 import AppLayout from "../../layouts/AppLayout.astro";
-import { listEvents } from "../../lib/db";
+import { listEvents, listEventsInRange } from "../../lib/db";
 import { styleFor, formatDate, formatTime } from "../../lib/eventStyles";
+import {
+  todaySeoul,
+  wallClockSeoulToUnix,
+  toIsoDate,
+  getYMD,
+} from "../../lib/datetime";
 
 type When = "all" | "upcoming" | "past";
 const whenParam = Astro.url.searchParams.get("when");
 const activeWhen: When =
   whenParam === "upcoming" || whenParam === "past" ? whenParam : "all";
 
-const rows = await listEvents(Astro.locals.runtime.env.DB, {
+// ---------- Calendar state from URL ----------
+// `?date=YYYY-MM-DD` filters the event list to that day; the calendar shows
+// the month containing the date.
+// `?month=YYYY-MM` switches the calendar view without filtering.
+const dateParam = Astro.url.searchParams.get("date");
+const monthParam = Astro.url.searchParams.get("month");
+
+const today = todaySeoul();
+const isoDateRe = /^(\d{4})-(\d{2})-(\d{2})$/;
+const isoMonthRe = /^(\d{4})-(\d{2})$/;
+
+let selectedYMD: { y: number; m: number; d: number } | null = null;
+if (dateParam && isoDateRe.test(dateParam)) {
+  const [, y, mo, d] = dateParam.match(isoDateRe)!;
+  selectedYMD = { y: +y, m: +mo, d: +d };
+}
+
+let calMonth: { y: number; m: number };
+if (selectedYMD) {
+  calMonth = { y: selectedYMD.y, m: selectedYMD.m };
+} else if (monthParam && isoMonthRe.test(monthParam)) {
+  const [, y, mo] = monthParam.match(isoMonthRe)!;
+  calMonth = { y: +y, m: +mo };
+} else {
+  calMonth = { y: today.y, m: today.m };
+}
+
+// ---------- Fetch events ----------
+let rows = await listEvents(Astro.locals.runtime.env.DB, {
   when: activeWhen === "all" ? "upcoming" : activeWhen,
 });
 
-const featured = rows.slice(0, 3);
-const others = rows.slice(3);
+// Apply day filter if active.
+if (selectedYMD) {
+  const start = wallClockSeoulToUnix(selectedYMD.y, selectedYMD.m, selectedYMD.d, 0, 0);
+  const end = start + 24 * 3600;
+  rows = rows.filter((r) => r.start_at >= start && r.start_at < end);
+}
+
+// Days in the displayed month that have events (for dot indicators).
+const monthStart = wallClockSeoulToUnix(calMonth.y, calMonth.m, 1, 0, 0);
+const nextMonth = calMonth.m === 12
+  ? { y: calMonth.y + 1, m: 1 }
+  : { y: calMonth.y, m: calMonth.m + 1 };
+const monthEnd = wallClockSeoulToUnix(nextMonth.y, nextMonth.m, 1, 0, 0);
+const eventsThisMonth = await listEventsInRange(
+  Astro.locals.runtime.env.DB,
+  monthStart,
+  monthEnd,
+);
+const daysWithEvents = new Set<number>();
+for (const e of eventsThisMonth) {
+  daysWithEvents.add(getYMD(e.start_at).d);
+}
+
+// ---------- Calendar grid ----------
+// Mon-start week.
+const firstDay = new Date(Date.UTC(calMonth.y, calMonth.m - 1, 1));
+const firstWeekday = (firstDay.getUTCDay() + 6) % 7; // 0=Mon..6=Sun
+const daysInMonth = new Date(Date.UTC(calMonth.y, calMonth.m, 0)).getUTCDate();
+const prevMonthLastDay = new Date(Date.UTC(calMonth.y, calMonth.m - 1, 0)).getUTCDate();
+
+interface CalCell {
+  day: number;
+  inMonth: boolean;
+  isToday: boolean;
+  isSelected: boolean;
+  hasEvent: boolean;
+  isSunday: boolean;
+  href: string;
+}
+const calCells: CalCell[] = [];
+const totalCells = Math.ceil((firstWeekday + daysInMonth) / 7) * 7;
+for (let i = 0; i < totalCells; i++) {
+  let cellY = calMonth.y;
+  let cellM = calMonth.m;
+  let cellDay: number;
+  let inMonth = true;
+  if (i < firstWeekday) {
+    cellDay = prevMonthLastDay - firstWeekday + 1 + i;
+    inMonth = false;
+    if (cellM === 1) {
+      cellY -= 1;
+      cellM = 12;
+    } else {
+      cellM -= 1;
+    }
+  } else if (i - firstWeekday >= daysInMonth) {
+    cellDay = i - firstWeekday - daysInMonth + 1;
+    inMonth = false;
+    if (cellM === 12) {
+      cellY += 1;
+      cellM = 1;
+    } else {
+      cellM += 1;
+    }
+  } else {
+    cellDay = i - firstWeekday + 1;
+  }
+
+  const isToday =
+    inMonth &&
+    cellY === today.y &&
+    cellM === today.m &&
+    cellDay === today.d;
+  const isSelected =
+    !!selectedYMD &&
+    cellY === selectedYMD.y &&
+    cellM === selectedYMD.m &&
+    cellDay === selectedYMD.d;
+  const hasEvent = inMonth && daysWithEvents.has(cellDay);
+  const isSunday = i % 7 === 6;
+  const iso = `${cellY}-${String(cellM).padStart(2, "0")}-${String(cellDay).padStart(2, "0")}`;
+  const params = new URLSearchParams();
+  if (activeWhen !== "all") params.set("when", activeWhen);
+  // Clicking the currently-selected day clears the filter.
+  if (!isSelected) params.set("date", iso);
+  else params.set("month", `${cellY}-${String(cellM).padStart(2, "0")}`);
+  const qs = params.toString();
+  const href = qs ? `/events?${qs}` : "/events";
+
+  calCells.push({
+    day: cellDay,
+    inMonth,
+    isToday,
+    isSelected,
+    hasEvent,
+    isSunday,
+    href,
+  });
+}
+
+// Prev/next month navigation links.
+const prevMonthYM =
+  calMonth.m === 1
+    ? { y: calMonth.y - 1, m: 12 }
+    : { y: calMonth.y, m: calMonth.m - 1 };
+const nextMonthYM =
+  calMonth.m === 12
+    ? { y: calMonth.y + 1, m: 1 }
+    : { y: calMonth.y, m: calMonth.m + 1 };
+
+function navHref(ym: { y: number; m: number }): string {
+  const params = new URLSearchParams();
+  if (activeWhen !== "all") params.set("when", activeWhen);
+  params.set("month", `${ym.y}-${String(ym.m).padStart(2, "0")}`);
+  return `/events?${params.toString()}`;
+}
+
+const monthLabel = `${calMonth.y} оны ${calMonth.m}-р сар`;
+const weekdayLabels = ["Да", "Мя", "Лх", "Пү", "Ба", "Бя", "Ня"];
+
+const featured = selectedYMD ? rows : rows.slice(0, 3);
+const others = selectedYMD ? [] : rows.slice(3);
 
 const tabs: { key: When; label: string }[] = [
   { key: "all", label: "Бүгд" },
@@ -21,25 +175,16 @@ const tabs: { key: When; label: string }[] = [
   { key: "past", label: "Өнгөрсөн" },
 ];
 
-// Calendar week strip (current week, Monday → Sunday)
-const today = new Date();
-const dow = (today.getDay() + 6) % 7; // 0=Mon..6=Sun
-const weekStart = new Date(today);
-weekStart.setDate(today.getDate() - dow);
-weekStart.setHours(0, 0, 0, 0);
-const weekDays: { label: string; day: number; isToday: boolean; isSunday: boolean }[] = [];
-const weekdayLabels = ["Да", "Мя", "Лх", "Пү", "Ба", "Бя", "Ня"];
-for (let i = 0; i < 7; i++) {
-  const d = new Date(weekStart);
-  d.setDate(weekStart.getDate() + i);
-  weekDays.push({
-    label: weekdayLabels[i]!,
-    day: d.getDate(),
-    isToday: d.toDateString() === today.toDateString(),
-    isSunday: i === 6,
-  });
-}
-const monthLabel = `${today.getFullYear()} оны ${today.getMonth() + 1}-р сар`;
+const featuredHeading = selectedYMD
+  ? `${toIsoDate(wallClockSeoulToUnix(selectedYMD.y, selectedYMD.m, selectedYMD.d, 0, 0))}-ны үйл ажиллагаа`
+  : "Удахгүй болох үйл ажиллагаа";
+
+const clearFilterHref = (() => {
+  const params = new URLSearchParams();
+  if (activeWhen !== "all") params.set("when", activeWhen);
+  const qs = params.toString();
+  return qs ? `/events?${qs}` : "/events";
+})();
 ---
 
 <AppLayout title="Үйл ажиллагаа" activeTab="events" showHeader={false}>
@@ -54,46 +199,11 @@ const monthLabel = `${today.getFullYear()} оны ${today.getMonth() + 1}-р с�
         stroke="currentColor"
         viewBox="0 0 24 24"
       >
-        <path
-          d="M15 19l-7-7 7-7"
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"></path>
+        <path d="M15 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
       </svg>
     </a>
     <h1 class="flex-1 text-center text-lg font-bold">Үйл ажиллагаа</h1>
-    <button aria-label="Хайх" class="p-2">
-      <svg
-        class="h-6 w-6 text-mwa-text-primary"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <circle
-          cx="11"
-          cy="11"
-          r="7"
-          stroke-width="2"
-          stroke-linecap="round"></circle>
-        <path
-          d="M21 21l-4.35-4.35"
-          stroke-width="2"
-          stroke-linecap="round"></path>
-      </svg>
-    </button>
-    <button aria-label="Шүүлт" class="p-2">
-      <svg
-        class="h-6 w-6 text-mwa-text-primary"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          d="M4 6h16M7 12h10M10 18h4"
-          stroke-width="2"
-          stroke-linecap="round"></path>
-      </svg>
-    </button>
+    <div class="w-10"></div>
   </header>
 
   <nav
@@ -103,8 +213,12 @@ const monthLabel = `${today.getFullYear()} оны ${today.getMonth() + 1}-р с�
     {
       tabs.map((tab) => {
         const active = tab.key === activeWhen;
-        const href =
-          tab.key === "all" ? "/events" : `/events?when=${tab.key}`;
+        const params = new URLSearchParams();
+        if (tab.key !== "all") params.set("when", tab.key);
+        if (dateParam && isoDateRe.test(dateParam)) params.set("date", dateParam);
+        else if (monthParam && isoMonthRe.test(monthParam)) params.set("month", monthParam);
+        const qs = params.toString();
+        const href = qs ? `/events?${qs}` : "/events";
         return (
           <a
             href={href}
@@ -122,62 +236,101 @@ const monthLabel = `${today.getFullYear()} оны ${today.getMonth() + 1}-р с�
     }
   </nav>
 
-  <section
-    class="px-5 pt-4 pb-2"
-    data-purpose="week-calendar"
-  >
+  {/* ---------- Month calendar ---------- */}
+  <section class="px-5 pt-4 pb-2" data-purpose="month-calendar">
     <div class="flex items-center justify-between mb-3">
-      <button aria-label="Өмнөх сар" class="p-1 text-gray-400">
+      <a
+        href={navHref(prevMonthYM)}
+        aria-label="Өмнөх сар"
+        class="p-1.5 text-gray-500 hover:text-mwa-burgundy active:text-mwa-burgundy"
+      >
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path d="M15 19l-7-7 7-7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
         </svg>
-      </button>
-      <span class="text-sm font-semibold">{monthLabel} ▾</span>
-      <button aria-label="Дараах сар" class="p-1 text-gray-400">
+      </a>
+      <span class="text-sm font-bold">{monthLabel}</span>
+      <a
+        href={navHref(nextMonthYM)}
+        aria-label="Дараах сар"
+        class="p-1.5 text-gray-500 hover:text-mwa-burgundy active:text-mwa-burgundy"
+      >
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path d="M9 5l7 7-7 7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
         </svg>
-      </button>
+      </a>
     </div>
+
     <div class="grid grid-cols-7 text-center text-[11px] text-gray-400 mb-2">
-      {weekdayLabels.map((l, i) => (
-        <div class={i === 6 ? "text-rose-500" : ""}>{l}</div>
-      ))}
-    </div>
-    <div class="grid grid-cols-7 text-center">
       {
-        weekDays.map((d) => (
-          <div class="py-1">
-            {d.isToday ? (
-              <span class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-mwa-burgundy text-white text-sm font-bold">
-                {d.day}
-              </span>
-            ) : (
-              <span
-                class={`inline-flex items-center justify-center w-9 h-9 text-sm ${
-                  d.isSunday ? "text-rose-500" : "text-mwa-text-primary"
-                }`}
-              >
-                {d.day}
-              </span>
-            )}
-          </div>
+        weekdayLabels.map((l, i) => (
+          <div class={i === 6 ? "text-rose-500" : ""}>{l}</div>
         ))
       }
     </div>
+
+    <div class="grid grid-cols-7 text-center">
+      {
+        calCells.map((c) => (
+          <a
+            href={c.href}
+            class="relative py-1 flex items-center justify-center"
+            aria-label={`${c.day}-ны өдөр`}
+          >
+            <span
+              class={`relative inline-flex items-center justify-center w-9 h-9 rounded-full text-sm transition-colors ${
+                c.isSelected
+                  ? "bg-mwa-burgundy text-white font-bold"
+                  : c.isToday
+                    ? "border-2 border-mwa-burgundy text-mwa-burgundy font-bold"
+                    : c.inMonth
+                      ? c.isSunday
+                        ? "text-rose-500"
+                        : "text-mwa-text-primary"
+                      : "text-gray-300"
+              }`}
+            >
+              {c.day}
+              {c.hasEvent && (
+                <span
+                  class={`absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full ${
+                    c.isSelected ? "bg-white" : "bg-mwa-burgundy"
+                  }`}
+                />
+              )}
+            </span>
+          </a>
+        ))
+      }
+    </div>
+
+    {selectedYMD && (
+      <div class="mt-3 flex items-center justify-center">
+        <a
+          href={clearFilterHref}
+          class="inline-flex items-center gap-1.5 text-[11px] font-semibold text-mwa-burgundy bg-mwa-burgundy/5 border border-mwa-burgundy/20 rounded-full px-3 py-1.5"
+        >
+          <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path d="M6 18L18 6M6 6l12 12" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          Шүүлтийг арилгах
+        </a>
+      </div>
+    )}
   </section>
 
   {
     featured.length > 0 && (
       <section class="px-5 mt-4" data-purpose="featured-events">
         <div class="flex items-center justify-between mb-3">
-          <h2 class="font-bold text-base">Удахгүй болох үйл ажиллагаа</h2>
-          <a
-            href="/events?when=upcoming"
-            class="text-xs text-gray-400 font-medium"
-          >
-            Бүгдийг харах →
-          </a>
+          <h2 class="font-bold text-base">{featuredHeading}</h2>
+          {!selectedYMD && (
+            <a
+              href="/events?when=upcoming"
+              class="text-xs text-gray-400 font-medium"
+            >
+              Бүгдийг харах →
+            </a>
+          )}
         </div>
 
         <div class="space-y-3">
@@ -297,8 +450,10 @@ const monthLabel = `${today.getFullYear()} оны ${today.getMonth() + 1}-р с�
 
   {
     rows.length === 0 && (
-      <div class="text-center py-12 text-gray-400 text-sm">
-        Одоогоор арга хэмжээ алга байна.
+      <div class="text-center py-12 text-gray-400 text-sm px-5">
+        {selectedYMD
+          ? "Энэ өдөр арга хэмжээ алга байна."
+          : "Одоогоор арга хэмжээ алга байна."}
       </div>
     )
   }
