@@ -7,12 +7,12 @@ pages_build_output_dir = "./dist"
 [[d1_databases]]
 binding = "DB"
 database_name = "mwa-korea-db"
-database_id = "fe928fb9-9c1c-41a1-a368-b9bb009cd306"
+database_id = "fb6e2b06-80de-45c7-abe3-0af337f86f32"
 
 # KV namespace (created via `wrangler kv namespace create SESSIONS`)
 [[kv_namespaces]]
 binding = "SESSIONS"
-id = "5133df5b7b0e48808c59e2ef10245837"
+id = "1c90df8fc2774c5f900c1d14b0c95389"
 
 # R2 bucket (created via `wrangler r2 bucket create mwa-korea-media`)
 [[r2_buckets]]
