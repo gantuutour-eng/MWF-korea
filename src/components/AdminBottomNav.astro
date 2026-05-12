@@ -3,9 +3,10 @@ type AdminBottomTab = "dashboard" | "payments" | "chat" | "events" | "users";
 
 interface Props {
   active?: AdminBottomTab;
+  badges?: Partial<Record<AdminBottomTab, number>>;
 }
 
-const { active = "dashboard" } = Astro.props;
+const { active = "dashboard", badges = {} } = Astro.props;
 
 const items: {
   key: AdminBottomTab;
@@ -54,10 +55,11 @@ const items: {
     {
       items.map((item) => {
         const isActive = item.key === active;
+        const badge = badges[item.key];
         return (
           <a
             href={item.href}
-            class="flex flex-col items-center space-y-1 w-1/5"
+            class="relative flex flex-col items-center space-y-1 w-1/5"
           >
             <svg
               class={`w-6 h-6 ${isActive ? "text-mwa-burgundy" : "text-gray-400"}`}
@@ -75,6 +77,13 @@ const items: {
             >
               {item.label}
             </span>
+            {badge !== undefined && badge > 0 && (
+              <span
+                class="absolute top-0 right-1 min-w-[18px] h-[18px] px-1 bg-mwa-burgundy text-white text-[10px] font-extrabold rounded-full flex items-center justify-center border-2 border-white shadow"
+              >
+                {badge > 99 ? "99+" : badge}
+              </span>
+            )}
           </a>
         );
       })

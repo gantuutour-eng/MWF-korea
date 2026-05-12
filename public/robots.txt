@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /api/
+Disallow: /profile
+Disallow: /membership/pending
+
+Sitemap: https://mwf.co.kr/sitemap.xml

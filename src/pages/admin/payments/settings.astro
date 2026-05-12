@@ -9,6 +9,8 @@ const me = await loadAdmin(env.DB, env.SESSIONS, Astro.request.headers.get("cook
 if (!me) return Astro.redirect("/profile/login?next=/admin/payments/settings");
 
 const bank = await getBankAccount(env.DB);
+const emailConfigured = !!env.RESEND_API_KEY;
+const emailFrom = env.RESEND_FROM || "MWA Korea <onboarding@resend.dev>";
 ---
 
 <AdminLayout title="Дансны мэдээлэл" active="payments">
@@ -110,6 +112,69 @@ const bank = await getBankAccount(env.DB);
       </form>
     </section>
 
+    {/* ---------- Email diagnostics ---------- */}
+    <section class="px-5 lg:px-0 mb-6">
+      <h2 class="font-bold text-base mb-3">Имэйл илгээлт</h2>
+      <div class="bg-white border border-gray-100 rounded-2xl p-4 lg:p-6 space-y-3 shadow-sm">
+        <div class="flex items-center justify-between gap-3">
+          <div>
+            <div class="text-[11px] text-gray-400">Resend API түлхүүр</div>
+            <div class="text-sm font-bold flex items-center gap-2 mt-0.5">
+              {emailConfigured ? (
+                <>
+                  <span class="inline-block w-2 h-2 rounded-full bg-emerald-500" />
+                  <span class="text-emerald-700">Тохируулагдсан</span>
+                </>
+              ) : (
+                <>
+                  <span class="inline-block w-2 h-2 rounded-full bg-rose-500" />
+                  <span class="text-rose-700">Тохируулагдаагүй</span>
+                </>
+              )}
+            </div>
+          </div>
+          <div class="text-right">
+            <div class="text-[11px] text-gray-400">Илгээгч (From)</div>
+            <div class="text-[12px] font-mono text-mwa-text-primary mt-0.5">{emailFrom}</div>
+          </div>
+        </div>
+
+        {!emailConfigured && (
+          <div class="text-[11px] text-rose-700 bg-rose-50 border border-rose-200 rounded-lg p-3 leading-relaxed">
+            <strong>RESEND_API_KEY</strong> орчны хувьсагч хоосон байна.
+            Cloudflare Pages → Settings → Variables and Secrets хэсэгт
+            нэмж тохируулна уу.
+          </div>
+        )}
+
+        <div class="pt-2 border-t border-gray-100">
+          <label class="text-xs font-bold text-mwa-text-secondary mb-1.5 block">
+            Тест илгээх (өөрийн имэйл рүү)
+          </label>
+          <div class="flex gap-2">
+            <input
+              id="test-email-input"
+              type="email"
+              value={me.email}
+              class="flex-1 bg-white border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-mwa-burgundy"
+            />
+            <button
+              type="button"
+              id="test-email-btn"
+              class="bg-mwa-burgundy text-white text-sm font-bold px-4 py-2 rounded-xl active:opacity-80 disabled:opacity-50"
+              disabled={!emailConfigured}
+            >
+              Илгээх
+            </button>
+          </div>
+          <pre
+            id="test-email-result"
+            class="hidden mt-3 bg-gray-50 border border-gray-200 rounded-xl p-3 text-[10px] font-mono whitespace-pre-wrap break-words max-h-64 overflow-y-auto"
+          ></pre>
+        </div>
+      </div>
+    </section>
+
     {/* ---------- Live preview ---------- */}
     <section class="px-5 lg:px-0 mb-10">
       <h2 class="font-bold text-base mb-3">Урьдчилан харах</h2>
@@ -155,6 +220,38 @@ const bank = await getBankAccount(env.DB);
       if (input.name === "number" && previewNumber) previewNumber.textContent = v;
       if (input.name === "holder" && previewHolder) previewHolder.textContent = v;
     });
+  });
+
+  // ---------- Email test ----------
+  const testBtn = document.getElementById("test-email-btn") as HTMLButtonElement | null;
+  const testInput = document.getElementById("test-email-input") as HTMLInputElement | null;
+  const testResult = document.getElementById("test-email-result") as HTMLPreElement | null;
+
+  testBtn?.addEventListener("click", async () => {
+    if (!testInput || !testResult) return;
+    const to = testInput.value.trim();
+    if (!to) {
+      testResult.textContent = "Хүлээн авах имэйл хаягийг бөглөнө үү.";
+      testResult.classList.remove("hidden");
+      return;
+    }
+    testBtn.disabled = true;
+    testResult.textContent = "Илгээж байна…";
+    testResult.classList.remove("hidden");
+    try {
+      const res = await fetch("/api/admin/email/test", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ to }),
+      });
+      const data = (await res.json().catch(() => ({}))) as Record<string, unknown>;
+      testResult.textContent = JSON.stringify(data, null, 2);
+    } catch (e) {
+      testResult.textContent = "Сүлжээний алдаа: " + String((e as Error).message ?? e);
+    } finally {
+      testBtn.disabled = false;
+    }
   });
 
   form?.addEventListener("submit", async () => {

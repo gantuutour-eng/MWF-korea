@@ -1,6 +1,7 @@
 ---
 import "../styles/global.css";
 import AdminBottomNav from "../components/AdminBottomNav.astro";
+import { countAdminUnreadChat, countPendingPayments } from "../lib/db";
 
 type AdminNavKey =
   | "dashboard"
@@ -18,6 +19,19 @@ interface Props {
 }
 
 const { title = "Админ панель", active = "dashboard" } = Astro.props;
+
+// Badge counts (chat unread + pending payments). Two small COUNT queries —
+// shared across every admin page so the badges are always live.
+const env = Astro.locals.runtime.env;
+const [unreadChat, pendingPayments] = await Promise.all([
+  countAdminUnreadChat(env.DB),
+  countPendingPayments(env.DB),
+]);
+
+const badges: Partial<Record<AdminNavKey, number>> = {
+  chat: unreadChat,
+  payments: pendingPayments,
+};
 
 // Map admin nav key to the 5-tab mobile bottom nav. Sections that aren't on
 // the bottom bar (news/portfolio/hero) keep dashboard highlighted as fallback.
@@ -128,25 +142,40 @@ const nav: { key: AdminNavKey; label: string; href: string; icon: string }[] = [
 
       <nav class="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
         {
-          nav.map((item) => (
-            <a
-              href={item.href}
-              class={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
-                active === item.key
-                  ? "bg-mwa-burgundy text-white shadow-sm"
-                  : "text-gray-600 hover:bg-gray-100 hover:text-mwa-text-primary"
-              }`}
-            >
-              <svg
-                class="w-5 h-5 shrink-0"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                set:html={item.icon}
-              />
-              <span>{item.label}</span>
-            </a>
-          ))
+          nav.map((item) => {
+            const isActive = active === item.key;
+            const badge = badges[item.key];
+            return (
+              <a
+                href={item.href}
+                class={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
+                  isActive
+                    ? "bg-mwa-burgundy text-white shadow-sm"
+                    : "text-gray-600 hover:bg-gray-100 hover:text-mwa-text-primary"
+                }`}
+              >
+                <svg
+                  class="w-5 h-5 shrink-0"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  set:html={item.icon}
+                />
+                <span class="flex-1">{item.label}</span>
+                {badge !== undefined && badge > 0 && (
+                  <span
+                    class={`shrink-0 min-w-[20px] h-5 px-1.5 rounded-full text-[11px] font-bold flex items-center justify-center ${
+                      isActive
+                        ? "bg-white text-mwa-burgundy"
+                        : "bg-mwa-burgundy text-white"
+                    }`}
+                  >
+                    {badge > 99 ? "99+" : badge}
+                  </span>
+                )}
+              </a>
+            );
+          })
         }
       </nav>
 
@@ -180,6 +209,9 @@ const nav: { key: AdminNavKey; label: string; href: string; icon: string }[] = [
       <slot />
     </main>
 
-    <AdminBottomNav active={mobileActive} />
+    <AdminBottomNav
+      active={mobileActive}
+      badges={{ chat: unreadChat, payments: pendingPayments }}
+    />
   </body>
 </html>

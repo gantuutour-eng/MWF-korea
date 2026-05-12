@@ -1,8 +1,16 @@
 ---
 import { loadNotifications } from "../lib/notifications";
 import { formatDateTime as fmtDateTimeKr } from "../lib/datetime";
+import { countUserUnreadChat } from "../lib/db";
+import { loadCurrentUser } from "../lib/auth";
 
 const env = Astro.locals.runtime.env;
+const me = await loadCurrentUser(
+  env.DB,
+  env.SESSIONS,
+  Astro.request.headers.get("cookie"),
+);
+const chatUnread = me ? await countUserUnreadChat(env.DB, me.id) : 0;
 const { items: notifications, latestAt } = await loadNotifications(env.DB);
 
 interface MenuItem {
@@ -222,16 +230,22 @@ function fmtAt(unix: number, kind: "news" | "event"): string {
   {
     desktopTabs.map((t) => {
       const isActive = t.active(path);
+      const showBadge = t.href === "/chat" && chatUnread > 0;
       return (
         <a
           href={t.href}
-          class={`px-3 py-2 rounded-lg text-sm font-semibold transition-colors ${
+          class={`relative px-3 py-2 rounded-lg text-sm font-semibold transition-colors ${
             isActive
               ? "text-mwa-burgundy bg-mwa-burgundy/5"
               : "text-mwa-text-secondary hover:text-mwa-burgundy hover:bg-gray-50"
           }`}
         >
           {t.label}
+          {showBadge && (
+            <span class="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 bg-mwa-burgundy text-white text-[10px] font-extrabold rounded-full align-middle">
+              {chatUnread > 99 ? "99+" : chatUnread}
+            </span>
+          )}
         </a>
       );
     })

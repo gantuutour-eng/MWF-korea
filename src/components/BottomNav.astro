@@ -1,4 +1,7 @@
 ---
+import { loadCurrentUser } from "../lib/auth";
+import { countUserUnreadChat } from "../lib/db";
+
 export type BottomTab = "home" | "news" | "chat" | "events" | "profile";
 
 interface Props {
@@ -6,6 +9,14 @@ interface Props {
 }
 
 const { active = "home" } = Astro.props;
+
+const env = Astro.locals.runtime.env;
+const me = await loadCurrentUser(
+  env.DB,
+  env.SESSIONS,
+  Astro.request.headers.get("cookie"),
+);
+const chatUnread = me ? await countUserUnreadChat(env.DB, me.id) : 0;
 
 const tabClass = (key: BottomTab) =>
   active === key ? "text-mwa-burgundy" : "text-gray-400";
@@ -65,7 +76,7 @@ const labelClass = (key: BottomTab) =>
       <span class={labelClass("news")}>Мэдээ</span>
     </a>
 
-    <a href="/chat" class="flex flex-col items-center space-y-1 w-1/5">
+    <a href="/chat" class="relative flex flex-col items-center space-y-1 w-1/5">
       {
         active === "chat" ? (
           <svg
@@ -92,6 +103,11 @@ const labelClass = (key: BottomTab) =>
         )
       }
       <span class={labelClass("chat")}>Чат</span>
+      {chatUnread > 0 && (
+        <span class="absolute top-0 right-1/4 min-w-[18px] h-[18px] px-1 bg-mwa-burgundy text-white text-[10px] font-extrabold rounded-full flex items-center justify-center border-2 border-white shadow">
+          {chatUnread > 99 ? "99+" : chatUnread}
+        </span>
+      )}
     </a>
 
     <a href="/events" class="flex flex-col items-center space-y-1 w-1/5">

@@ -919,6 +919,40 @@ export async function markChatRead(
     .run();
 }
 
+/** Total unread chat messages from members across all conversations (admin badge). */
+export async function countAdminUnreadChat(db: D1Database): Promise<number> {
+  const row = await db
+    .prepare(
+      "SELECT COUNT(*) AS c FROM chat_messages WHERE author_role = 'member' AND read_at IS NULL",
+    )
+    .first<{ c: number }>();
+  return row?.c ?? 0;
+}
+
+/** Unread admin messages addressed to a specific member (user badge). */
+export async function countUserUnreadChat(
+  db: D1Database,
+  userId: number,
+): Promise<number> {
+  const row = await db
+    .prepare(
+      "SELECT COUNT(*) AS c FROM chat_messages WHERE user_id = ?1 AND author_role = 'admin' AND read_at IS NULL",
+    )
+    .bind(userId)
+    .first<{ c: number }>();
+  return row?.c ?? 0;
+}
+
+/** Count of pending membership payments (admin badge). */
+export async function countPendingPayments(db: D1Database): Promise<number> {
+  const row = await db
+    .prepare(
+      "SELECT COUNT(*) AS c FROM membership_payments WHERE status = 'pending'",
+    )
+    .first<{ c: number }>();
+  return row?.c ?? 0;
+}
+
 export async function listChatConversations(
   db: D1Database,
 ): Promise<ChatConversationRow[]> {
