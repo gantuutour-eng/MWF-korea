@@ -70,11 +70,44 @@ export const COMPARISON_ROWS: { label: string; icon: string }[] = [
   },
 ];
 
-export const BANK_ACCOUNT = {
+import { getSettings, setSetting } from "./db";
+
+export interface BankAccount {
+  bank: string;
+  number: string;
+  holder: string;
+}
+
+/** Used when no override exists in site_settings yet. */
+export const DEFAULT_BANK_ACCOUNT: BankAccount = {
   bank: "Хаан банк",
   number: "5006 0123 4567",
   holder: "MWA салбар зөвлөл",
 };
+
+const BANK_KEYS = [
+  "bank.name",
+  "bank.account_number",
+  "bank.account_holder",
+] as const;
+
+export async function getBankAccount(db: D1Database): Promise<BankAccount> {
+  const s = await getSettings(db, [...BANK_KEYS]);
+  return {
+    bank: s["bank.name"] ?? DEFAULT_BANK_ACCOUNT.bank,
+    number: s["bank.account_number"] ?? DEFAULT_BANK_ACCOUNT.number,
+    holder: s["bank.account_holder"] ?? DEFAULT_BANK_ACCOUNT.holder,
+  };
+}
+
+export async function setBankAccount(
+  db: D1Database,
+  data: BankAccount,
+): Promise<void> {
+  await setSetting(db, "bank.name", data.bank);
+  await setSetting(db, "bank.account_number", data.number);
+  await setSetting(db, "bank.account_holder", data.holder);
+}
 
 export const ALT_PAYMENT_METHODS: { id: string; label: string; subtitle: string; badge: string }[] = [
   { id: "card", label: "Банкны карт", subtitle: "Visa, Mastercard, UnionPay", badge: "Тун удахгүй" },

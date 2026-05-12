@@ -4,7 +4,7 @@ import { getMembershipPayment } from "../../../lib/db";
 import {
   getPlan,
   formatTugrik,
-  BANK_ACCOUNT,
+  getBankAccount,
 } from "../../../lib/membership";
 import { loadCurrentUser } from "../../../lib/auth";
 
@@ -19,6 +19,7 @@ if (!order) {
 }
 
 const plan = getPlan(order.plan_id);
+const BANK_ACCOUNT = await getBankAccount(env.DB);
 const me = await loadCurrentUser(
   env.DB,
   env.SESSIONS,

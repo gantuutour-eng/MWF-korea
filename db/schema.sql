@@ -14,6 +14,7 @@ DROP TABLE IF EXISTS portfolio_stats;
 DROP TABLE IF EXISTS hero_slides;
 DROP TABLE IF EXISTS events;
 DROP TABLE IF EXISTS news;
+DROP TABLE IF EXISTS site_settings;
 DROP TABLE IF EXISTS users;
 
 CREATE TABLE users (
@@ -167,3 +168,9 @@ CREATE TABLE membership_payments (
 
 CREATE INDEX idx_membership_payments_user ON membership_payments(user_id);
 CREATE INDEX idx_membership_payments_status ON membership_payments(status);
+
+CREATE TABLE site_settings (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL,
+  updated_at INTEGER NOT NULL DEFAULT (unixepoch())
+);

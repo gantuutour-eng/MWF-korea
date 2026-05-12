@@ -1,0 +1,196 @@
+---
+import AdminLayout from "../../../layouts/AdminLayout.astro";
+import AdminPaymentsTabs from "../../../components/AdminPaymentsTabs.astro";
+import { loadAdmin } from "../../../lib/adminAuth";
+import { getBankAccount } from "../../../lib/membership";
+
+const env = Astro.locals.runtime.env;
+const me = await loadAdmin(env.DB, env.SESSIONS, Astro.request.headers.get("cookie"));
+if (!me) return Astro.redirect("/profile/login?next=/admin/payments/settings");
+
+const bank = await getBankAccount(env.DB);
+---
+
+<AdminLayout title="Дансны мэдээлэл" active="payments">
+  <header
+    class="lg:hidden px-3 pt-6 pb-3 flex items-center bg-white border-b border-gray-100 sticky top-0 z-20"
+  >
+    <a href="/admin" aria-label="Буцах" class="p-2">
+      <svg
+        class="h-6 w-6 text-mwa-text-primary"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path d="M15 19l-7-7 7-7" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path>
+      </svg>
+    </a>
+    <h1 class="flex-1 text-center text-lg font-bold">Дансны мэдээлэл</h1>
+    <div class="w-10"></div>
+  </header>
+
+  <div class="max-w-3xl mx-auto lg:px-8 lg:py-8">
+    <h1 class="hidden lg:block text-2xl font-extrabold mb-6">Дансны мэдээлэл</h1>
+
+    <AdminPaymentsTabs active="settings" />
+
+    <section class="px-5 lg:px-0 mb-4">
+      <div class="bg-mwa-burgundy/5 border border-mwa-burgundy/20 rounded-2xl p-4 flex items-start gap-3">
+        <svg class="w-5 h-5 text-mwa-burgundy shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+        </svg>
+        <div class="text-[12px] text-mwa-text-primary leading-snug">
+          Энэ мэдээлэл нь <strong>гишүүнчлэлийн төлбөр шилжүүлэх</strong>
+          хуудсанд хэрэглэгчдэд харагдана. Хадгалмагц шууд бүх захиалгад
+          шинэ данс харуулна.
+        </div>
+      </div>
+    </section>
+
+    <section class="px-5 lg:px-0 mb-6">
+      <form
+        id="bank-form"
+        class="bg-white border border-gray-100 rounded-2xl p-4 lg:p-6 space-y-4 shadow-sm"
+        onsubmit="return false"
+      >
+        <div>
+          <label class="text-xs font-bold text-mwa-text-secondary mb-1.5 block">
+            Банкны нэр <span class="text-rose-500">*</span>
+          </label>
+          <input
+            name="bank"
+            type="text"
+            required
+            maxlength="80"
+            value={bank.bank}
+            placeholder="Жнь: Хаан банк"
+            class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-mwa-burgundy"
+          />
+        </div>
+
+        <div>
+          <label class="text-xs font-bold text-mwa-text-secondary mb-1.5 block">
+            Дансны дугаар <span class="text-rose-500">*</span>
+          </label>
+          <input
+            name="number"
+            type="text"
+            required
+            maxlength="80"
+            value={bank.number}
+            placeholder="Жнь: 5006 0123 4567"
+            class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-base font-mono focus:outline-none focus:border-mwa-burgundy"
+          />
+        </div>
+
+        <div>
+          <label class="text-xs font-bold text-mwa-text-secondary mb-1.5 block">
+            Дансны эзэн <span class="text-rose-500">*</span>
+          </label>
+          <input
+            name="holder"
+            type="text"
+            required
+            maxlength="80"
+            value={bank.holder}
+            placeholder="Жнь: MWA салбар зөвлөл"
+            class="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-mwa-burgundy"
+          />
+        </div>
+
+        <p id="bank-error" class="text-sm text-rose-500 text-center hidden"></p>
+        <p id="bank-success" class="text-sm text-emerald-600 text-center hidden"></p>
+
+        <button
+          type="submit"
+          class="w-full lg:w-auto lg:px-8 bg-mwa-burgundy text-white font-bold py-3 rounded-xl text-sm active:opacity-80 disabled:opacity-50"
+        >
+          Хадгалах
+        </button>
+      </form>
+    </section>
+
+    {/* ---------- Live preview ---------- */}
+    <section class="px-5 lg:px-0 mb-10">
+      <h2 class="font-bold text-base mb-3">Урьдчилан харах</h2>
+      <p class="text-[11px] text-mwa-text-secondary mb-2">
+        Хэрэглэгчийн төлбөрийн хуудсанд харагдах байдал:
+      </p>
+      <div class="max-w-md bg-white border border-gray-200 rounded-2xl divide-y divide-gray-100">
+        <div class="p-4">
+          <div class="text-[11px] text-mwa-text-secondary">Хүлээн авагч банк</div>
+          <div class="font-bold text-sm" data-preview-bank>{bank.bank}</div>
+        </div>
+        <div class="p-4">
+          <div class="text-[11px] text-mwa-text-secondary">Дансны дугаар</div>
+          <div class="font-bold text-base font-mono" data-preview-number>{bank.number}</div>
+        </div>
+        <div class="p-4">
+          <div class="text-[11px] text-mwa-text-secondary">Дансны эзэн</div>
+          <div class="font-bold text-sm" data-preview-holder>{bank.holder}</div>
+        </div>
+      </div>
+    </section>
+  </div>
+</AdminLayout>
+
+<script>
+  interface ApiResponse {
+    ok?: boolean;
+    error?: string;
+  }
+
+  const form = document.getElementById("bank-form") as HTMLFormElement | null;
+  const errorEl = document.getElementById("bank-error");
+  const successEl = document.getElementById("bank-success");
+  const previewBank = document.querySelector<HTMLElement>("[data-preview-bank]");
+  const previewNumber = document.querySelector<HTMLElement>("[data-preview-number]");
+  const previewHolder = document.querySelector<HTMLElement>("[data-preview-holder]");
+
+  // Live preview as the admin types.
+  form?.querySelectorAll<HTMLInputElement>("input[name]").forEach((input) => {
+    input.addEventListener("input", () => {
+      const v = input.value.trim() || "—";
+      if (input.name === "bank" && previewBank) previewBank.textContent = v;
+      if (input.name === "number" && previewNumber) previewNumber.textContent = v;
+      if (input.name === "holder" && previewHolder) previewHolder.textContent = v;
+    });
+  });
+
+  form?.addEventListener("submit", async () => {
+    if (!form || !errorEl || !successEl) return;
+    errorEl.classList.add("hidden");
+    successEl.classList.add("hidden");
+    const submitBtn = form.querySelector<HTMLButtonElement>("button[type='submit']");
+    if (submitBtn) submitBtn.disabled = true;
+
+    const data = new FormData(form);
+    const payload = {
+      bank: String(data.get("bank") ?? "").trim(),
+      number: String(data.get("number") ?? "").trim(),
+      holder: String(data.get("holder") ?? "").trim(),
+    };
+
+    try {
+      const res = await fetch("/api/admin/settings/bank", {
+        method: "PUT",
+        credentials: "same-origin",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const body = (await res.json().catch(() => ({}))) as ApiResponse;
+      if (res.ok && body.ok) {
+        successEl.textContent = "Хадгалагдлаа ✓";
+        successEl.classList.remove("hidden");
+      } else {
+        errorEl.textContent = body.error ?? "Алдаа гарлаа";
+        errorEl.classList.remove("hidden");
+      }
+    } catch {
+      errorEl.textContent = "Сүлжээний алдаа";
+      errorEl.classList.remove("hidden");
+    } finally {
+      if (submitBtn) submitBtn.disabled = false;
+    }
+  });
+</script>

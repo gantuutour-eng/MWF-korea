@@ -1065,6 +1065,177 @@ export async function listAllMembershipPayments(
   return results ?? [];
 }
 
+/** Membership payment row joined with the customer's user record. */
+export interface MembershipPaymentWithUser extends MembershipPaymentRow {
+  user_name: string | null;
+  user_email: string | null;
+  user_phone: string | null;
+}
+
+const MP_WITH_USER_COLS = `
+  mp.id, mp.user_id, mp.plan_id, mp.months, mp.amount, mp.reference,
+  mp.customer_memo, mp.payment_method, mp.status, mp.created_at,
+  mp.confirmed_at, mp.starts_at, mp.ends_at, mp.admin_note,
+  u.name AS user_name, u.email AS user_email, u.phone AS user_phone
+`;
+
+export async function listAllMembershipPaymentsWithUser(
+  db: D1Database,
+  status?: MembershipPaymentStatus,
+): Promise<MembershipPaymentWithUser[]> {
+  if (status) {
+    const { results } = await db
+      .prepare(
+        `SELECT ${MP_WITH_USER_COLS}
+         FROM membership_payments mp
+         LEFT JOIN users u ON u.id = mp.user_id
+         WHERE mp.status = ?1
+         ORDER BY mp.created_at DESC`,
+      )
+      .bind(status)
+      .all<MembershipPaymentWithUser>();
+    return results ?? [];
+  }
+  const { results } = await db
+    .prepare(
+      `SELECT ${MP_WITH_USER_COLS}
+       FROM membership_payments mp
+       LEFT JOIN users u ON u.id = mp.user_id
+       ORDER BY mp.created_at DESC`,
+    )
+    .all<MembershipPaymentWithUser>();
+  return results ?? [];
+}
+
+/** Aggregated summary stats for the payments dashboard. */
+export interface PaymentSummary {
+  pending_count: number;
+  pending_amount: number;
+  confirmed_count: number;
+  confirmed_amount: number;
+  active_members: number;
+  this_month_amount: number;
+}
+
+export async function getPaymentSummary(
+  db: D1Database,
+): Promise<PaymentSummary> {
+  const now = Math.floor(Date.now() / 1000);
+  const monthStart = (() => {
+    const d = new Date();
+    d.setDate(1);
+    d.setHours(0, 0, 0, 0);
+    return Math.floor(d.getTime() / 1000);
+  })();
+  const row = await db
+    .prepare(
+      `SELECT
+         COALESCE(SUM(CASE WHEN status='pending' THEN 1 ELSE 0 END), 0) AS pending_count,
+         COALESCE(SUM(CASE WHEN status='pending' THEN amount ELSE 0 END), 0) AS pending_amount,
+         COALESCE(SUM(CASE WHEN status='confirmed' THEN 1 ELSE 0 END), 0) AS confirmed_count,
+         COALESCE(SUM(CASE WHEN status='confirmed' THEN amount ELSE 0 END), 0) AS confirmed_amount,
+         COALESCE(SUM(CASE WHEN status='confirmed' AND starts_at IS NOT NULL AND ends_at IS NOT NULL
+                          AND starts_at <= ?1 AND ends_at >= ?1 THEN 1 ELSE 0 END), 0) AS active_members,
+         COALESCE(SUM(CASE WHEN status='confirmed' AND confirmed_at >= ?2 THEN amount ELSE 0 END), 0) AS this_month_amount
+       FROM membership_payments`,
+    )
+    .bind(now, monthStart)
+    .first<PaymentSummary>();
+  return (
+    row ?? {
+      pending_count: 0,
+      pending_amount: 0,
+      confirmed_count: 0,
+      confirmed_amount: 0,
+      active_members: 0,
+      this_month_amount: 0,
+    }
+  );
+}
+
+/** One row per user with an active confirmed membership. */
+export interface ActivePaidMemberRow {
+  user_id: number;
+  name: string;
+  email: string;
+  phone: string | null;
+  avatar_url: string | null;
+  payment_id: number;
+  plan_id: string;
+  amount: number;
+  reference: string;
+  starts_at: number;
+  ends_at: number;
+}
+
+export async function listActivePaidMembers(
+  db: D1Database,
+): Promise<ActivePaidMemberRow[]> {
+  const now = Math.floor(Date.now() / 1000);
+  const { results } = await db
+    .prepare(
+      `SELECT u.id AS user_id, u.name, u.email, u.phone, u.avatar_url,
+              mp.id AS payment_id, mp.plan_id, mp.amount, mp.reference,
+              mp.starts_at, mp.ends_at
+       FROM membership_payments mp
+       JOIN users u ON u.id = mp.user_id
+       WHERE mp.status = 'confirmed'
+         AND mp.starts_at IS NOT NULL AND mp.ends_at IS NOT NULL
+         AND mp.starts_at <= ?1 AND mp.ends_at >= ?1
+       GROUP BY u.id
+       HAVING mp.ends_at = MAX(mp.ends_at)
+       ORDER BY mp.ends_at ASC`,
+    )
+    .bind(now)
+    .all<ActivePaidMemberRow>();
+  return results ?? [];
+}
+
+// ---------- Site settings (key/value) ----------
+
+export async function getSetting(
+  db: D1Database,
+  key: string,
+): Promise<string | null> {
+  const row = await db
+    .prepare("SELECT value FROM site_settings WHERE key = ?1")
+    .bind(key)
+    .first<{ value: string }>();
+  return row?.value ?? null;
+}
+
+export async function setSetting(
+  db: D1Database,
+  key: string,
+  value: string,
+): Promise<void> {
+  await db
+    .prepare(
+      "INSERT INTO site_settings (key, value, updated_at) VALUES (?1, ?2, unixepoch()) " +
+        "ON CONFLICT(key) DO UPDATE SET value = excluded.value, updated_at = excluded.updated_at",
+    )
+    .bind(key, value)
+    .run();
+}
+
+export async function getSettings(
+  db: D1Database,
+  keys: string[],
+): Promise<Record<string, string | null>> {
+  if (keys.length === 0) return {};
+  const placeholders = keys.map((_, i) => `?${i + 1}`).join(", ");
+  const { results } = await db
+    .prepare(
+      `SELECT key, value FROM site_settings WHERE key IN (${placeholders})`,
+    )
+    .bind(...keys)
+    .all<{ key: string; value: string }>();
+  const out: Record<string, string | null> = {};
+  for (const k of keys) out[k] = null;
+  for (const r of results ?? []) out[r.key] = r.value;
+  return out;
+}
+
 /** Latest currently-active membership for a user (confirmed and within start/end window). */
 export async function getActiveMembership(
   db: D1Database,
