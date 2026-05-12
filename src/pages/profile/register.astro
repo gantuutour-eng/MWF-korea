@@ -13,30 +13,69 @@ const googleHref = next
   showHeader={false}
   showBottomNav={false}
 >
-  <div class="px-6 pt-10 pb-10 flex flex-col items-center">
+  <div class="px-6 pt-8 pb-10 flex flex-col items-center">
     <img
       src="/images/logo.png"
       alt="MWA"
-      class="w-32 h-32 object-contain mb-5"
+      class="w-24 h-24 object-contain mb-4"
     />
-    <h1 class="text-mwa-burgundy text-2xl font-extrabold text-center mb-2">
+    <h1 class="text-mwa-burgundy text-xl font-extrabold text-center mb-1">
       Бүртгүүлэх
     </h1>
-    <p class="text-sm text-mwa-text-secondary text-center mb-8">
-      Гишүүнчлэлд элсэхийн тулд мэдээллээ оруулна уу
+    <p class="text-xs text-mwa-text-secondary text-center mb-8">
+      Гишүүнчлэлд нэгдэх анхны алхам
     </p>
+
+    {/* PRIMARY: Google signup */}
+    <a
+      href={googleHref}
+      class="w-full flex items-center justify-center gap-3 bg-white border-2 border-gray-200 rounded-2xl py-4 px-5 text-base font-bold text-mwa-text-primary shadow-sm hover:border-mwa-burgundy/40 hover:shadow-md active:opacity-80 transition"
+      aria-label="Google-ээр бүртгүүлэх"
+    >
+      <svg class="w-6 h-6" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+        <path
+          fill="#FFC107"
+          d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.2-.1-2.4-.4-3.5z"
+        />
+        <path
+          fill="#FF3D00"
+          d="M6.3 14.7l6.6 4.8C14.6 16 19 13 24 13c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.6 8.5 6.3 14.7z"
+        />
+        <path
+          fill="#4CAF50"
+          d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2c-2 1.5-4.5 2.4-7.2 2.4-5.2 0-9.6-3.3-11.2-7.9l-6.5 5C9.5 39.5 16.2 44 24 44z"
+        />
+        <path
+          fill="#1976D2"
+          d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.3 5.6l6.2 5.2C40.7 36.7 44 30.9 44 24c0-1.2-.1-2.4-.4-3.5z"
+        />
+      </svg>
+      <span>Google-ээр бүртгүүлэх</span>
+    </a>
+    <p class="text-[11px] text-mwa-text-secondary text-center mt-2 mb-8">
+      Нэг товчоор хурдан бүртгүүлэх боломж
+    </p>
+
+    {/* SECONDARY: email/password signup */}
+    <div class="w-full flex items-center gap-3 mb-6">
+      <span class="flex-1 h-px bg-gray-200"></span>
+      <span class="text-[10px] text-gray-400 uppercase tracking-wide">
+        эсвэл имэйлээр
+      </span>
+      <span class="flex-1 h-px bg-gray-200"></span>
+    </div>
 
     <form
       id="register-form"
-      class="w-full space-y-3"
+      class="w-full space-y-2.5"
       onsubmit="return false"
       data-next={next}
     >
       <label
-        class="flex items-center gap-3 bg-white border border-gray-200 rounded-2xl px-4 py-3.5 focus-within:border-mwa-burgundy"
+        class="flex items-center gap-2.5 bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 focus-within:border-mwa-burgundy focus-within:bg-white"
       >
         <svg
-          class="w-5 h-5 text-gray-400 shrink-0"
+          class="w-4 h-4 text-gray-400 shrink-0"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -52,15 +91,15 @@ const googleHref = next
           type="text"
           placeholder="Овог нэр"
           required
-          class="flex-1 bg-transparent text-base focus:outline-none placeholder:text-gray-400"
+          class="flex-1 bg-transparent text-sm focus:outline-none placeholder:text-gray-400"
         />
       </label>
 
       <label
-        class="flex items-center gap-3 bg-white border border-gray-200 rounded-2xl px-4 py-3.5 focus-within:border-mwa-burgundy"
+        class="flex items-center gap-2.5 bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 focus-within:border-mwa-burgundy focus-within:bg-white"
       >
         <svg
-          class="w-5 h-5 text-gray-400 shrink-0"
+          class="w-4 h-4 text-gray-400 shrink-0"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -77,15 +116,15 @@ const googleHref = next
           placeholder="Имэйл"
           required
           autocomplete="email"
-          class="flex-1 bg-transparent text-base focus:outline-none placeholder:text-gray-400"
+          class="flex-1 bg-transparent text-sm focus:outline-none placeholder:text-gray-400"
         />
       </label>
 
       <label
-        class="flex items-center gap-3 bg-white border border-gray-200 rounded-2xl px-4 py-3.5 focus-within:border-mwa-burgundy"
+        class="flex items-center gap-2.5 bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 focus-within:border-mwa-burgundy focus-within:bg-white"
       >
         <svg
-          class="w-5 h-5 text-gray-400 shrink-0"
+          class="w-4 h-4 text-gray-400 shrink-0"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -100,15 +139,15 @@ const googleHref = next
           name="phone"
           type="tel"
           placeholder="Утас (заавал биш)"
-          class="flex-1 bg-transparent text-base focus:outline-none placeholder:text-gray-400"
+          class="flex-1 bg-transparent text-sm focus:outline-none placeholder:text-gray-400"
         />
       </label>
 
       <label
-        class="flex items-center gap-3 bg-white border border-gray-200 rounded-2xl px-4 py-3.5 focus-within:border-mwa-burgundy"
+        class="flex items-center gap-2.5 bg-gray-50 border border-gray-200 rounded-xl px-3.5 py-2.5 focus-within:border-mwa-burgundy focus-within:bg-white"
       >
         <svg
-          class="w-5 h-5 text-gray-400 shrink-0"
+          class="w-4 h-4 text-gray-400 shrink-0"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -126,7 +165,7 @@ const googleHref = next
           required
           autocomplete="new-password"
           minlength="8"
-          class="flex-1 bg-transparent text-base focus:outline-none placeholder:text-gray-400"
+          class="flex-1 bg-transparent text-sm focus:outline-none placeholder:text-gray-400"
           data-password
         />
         <button
@@ -136,7 +175,7 @@ const googleHref = next
           data-toggle-password
         >
           <svg
-            class="w-5 h-5"
+            class="w-4 h-4"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -150,7 +189,7 @@ const googleHref = next
             <circle cx="12" cy="12" r="3" stroke-width="2" />
           </svg>
           <svg
-            class="w-5 h-5 hidden"
+            class="w-4 h-4 hidden"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -165,21 +204,17 @@ const googleHref = next
         </button>
       </label>
 
-      <p
-        id="register-error"
-        class="text-sm text-rose-500 text-center pt-1 hidden"
-      >
-      </p>
+      <p id="register-error" class="text-xs text-rose-500 text-center hidden"></p>
 
       <button
         type="submit"
-        class="w-full bg-mwa-burgundy text-white font-bold py-4 rounded-2xl text-base mt-3 active:opacity-80"
+        class="w-full bg-white border-2 border-mwa-burgundy text-mwa-burgundy font-bold py-2.5 rounded-xl text-sm mt-2 active:opacity-80 hover:bg-mwa-burgundy/5"
       >
-        Бүртгүүлэх
+        Имэйлээр бүртгүүлэх
       </button>
     </form>
 
-    <div class="flex items-center gap-2 mt-6 text-sm">
+    <div class="flex items-center gap-1.5 mt-8 text-xs">
       <span class="text-mwa-text-secondary">Бүртгэлтэй юу?</span>
       <a
         href={next ? `/profile/login?next=${encodeURIComponent(next)}` : "/profile/login"}
@@ -187,44 +222,6 @@ const googleHref = next
       >
         Нэвтрэх
       </a>
-    </div>
-
-    <div class="w-full flex items-center gap-3 my-8">
-      <span class="flex-1 h-px bg-gray-200"></span>
-      <span class="text-[11px] text-gray-400 uppercase tracking-wide">
-        эсвэл
-      </span>
-      <span class="flex-1 h-px bg-gray-200"></span>
-    </div>
-
-    <div class="flex flex-col items-center gap-2">
-      <a
-        href={googleHref}
-        aria-label="Google-ээр бүртгүүлэх"
-        class="w-14 h-14 rounded-full bg-white border border-gray-200 shadow-sm flex items-center justify-center active:opacity-80"
-      >
-        <svg class="w-7 h-7" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-          <path
-            fill="#FFC107"
-            d="M43.6 20.5H42V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.2-.1-2.4-.4-3.5z"
-          />
-          <path
-            fill="#FF3D00"
-            d="M6.3 14.7l6.6 4.8C14.6 16 19 13 24 13c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.6 8.5 6.3 14.7z"
-          />
-          <path
-            fill="#4CAF50"
-            d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2c-2 1.5-4.5 2.4-7.2 2.4-5.2 0-9.6-3.3-11.2-7.9l-6.5 5C9.5 39.5 16.2 44 24 44z"
-          />
-          <path
-            fill="#1976D2"
-            d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.3 5.6l6.2 5.2C40.7 36.7 44 30.9 44 24c0-1.2-.1-2.4-.4-3.5z"
-          />
-        </svg>
-      </a>
-      <p class="text-xs text-mwa-text-secondary text-center">
-        GOOGLE ID-аар хялбархан нэвтрээрэй
-      </p>
     </div>
   </div>
 </AppLayout>
