@@ -63,7 +63,7 @@ const initiallySaved = me
     </a>
   </header>
 
-  <article class="pb-10" data-purpose="article">
+  <article class="pb-10 lg:max-w-3xl lg:mx-auto" data-purpose="article">
     <h1 class="px-5 text-[26px] font-extrabold leading-tight text-mwa-text-primary mb-4">
       {row.title}
     </h1>
@@ -140,7 +140,7 @@ const initiallySaved = me
   </article>
 
   <section
-    class="px-5 mt-8 pb-10"
+    class="px-5 lg:px-8 mt-8 pb-10"
     aria-label="Бусад мэдээ"
     data-purpose="related-news"
   >
@@ -155,7 +155,7 @@ const initiallySaved = me
       related.length === 0 ? (
         <p class="text-sm text-gray-400">Одоогоор бусад мэдээ алга байна.</p>
       ) : (
-        <ul class="space-y-3">
+        <ul class="space-y-3 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-3">
           {related.map((n) => (
             <li>
               <a

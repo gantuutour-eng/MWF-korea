@@ -119,7 +119,7 @@ const nextStyle = next ? styleFor(next.type) : null;
     </div>
   </header>
 
-  <section class="px-5" data-purpose="detail-cover">
+  <section class="px-5 lg:px-8 lg:max-w-3xl lg:mx-auto" data-purpose="detail-cover">
     <div class="relative aspect-[16/9] rounded-2xl overflow-hidden bg-gray-100">
       {
         row.image_url ? (
@@ -140,12 +140,12 @@ const nextStyle = next ? styleFor(next.type) : null;
     </div>
   </section>
 
-  <h1 class="px-5 mt-5 text-2xl font-extrabold leading-tight">
+  <h1 class="px-5 lg:px-8 lg:max-w-3xl lg:mx-auto mt-5 text-2xl lg:text-3xl font-extrabold leading-tight">
     {row.title}
   </h1>
 
   <section
-    class="px-5 mt-5 space-y-2"
+    class="px-5 lg:px-8 lg:max-w-3xl lg:mx-auto mt-5 space-y-2"
     data-purpose="detail-meta"
   >
     <div class="flex items-center gap-3 bg-gray-50 p-3 rounded-xl">
@@ -183,7 +183,7 @@ const nextStyle = next ? styleFor(next.type) : null;
 
   {
     row.description && (
-      <section class="px-5 mt-6" data-purpose="detail-body">
+      <section class="px-5 lg:px-8 lg:max-w-3xl lg:mx-auto mt-6" data-purpose="detail-body">
         <h2 class="font-bold text-base mb-2">Дэлгэрэнгүй</h2>
         <p class="text-sm text-gray-700 whitespace-pre-line leading-relaxed">
           {row.description}
@@ -195,7 +195,7 @@ const nextStyle = next ? styleFor(next.type) : null;
   {
     (prev || next) && (
       <nav
-        class="px-5 mt-8 pb-10 space-y-3"
+        class="px-5 lg:px-8 lg:max-w-3xl lg:mx-auto mt-8 pb-10 space-y-3"
         aria-label="Бусад арга хэмжээ"
         data-purpose="event-nav"
       >

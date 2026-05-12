@@ -1,6 +1,7 @@
 ---
 import AppLayout from "../../layouts/AppLayout.astro";
 import { listNews, type NewsCategory } from "../../lib/db";
+import { formatDate as fmtDate } from "../../lib/datetime";
 
 const allowed: NewsCategory[] = ["notice", "article"];
 const categoryParam = Astro.url.searchParams.get("cat");
@@ -14,14 +15,6 @@ const rows = await listNews(Astro.locals.runtime.env.DB, {
   limit: 50,
   category: activeCategory === "all" ? undefined : activeCategory,
 });
-
-function fmtDate(unix: number): string {
-  const d = new Date(unix * 1000);
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}.${m}.${day}`;
-}
 
 const tabs: { key: NewsCategory | "all"; label: string; href: string }[] = [
   { key: "all", label: "Бүх мэдээ", href: "/news" },
@@ -86,17 +79,20 @@ const tabs: { key: NewsCategory | "all"; label: string; href: string }[] = [
     }
   </nav>
 
-  <section class="px-5 pt-4 space-y-5" data-purpose="news-list">
+  <section
+    class="px-5 lg:px-8 pt-4 space-y-5 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-5"
+    data-purpose="news-list"
+  >
     {
       rows.length === 0 && (
-        <div class="text-center py-12 text-gray-400 text-sm">
+        <div class="text-center py-12 text-gray-400 text-sm lg:col-span-2">
           Одоогоор мэдээ алга байна.
         </div>
       )
     }
     {
       rows.map((row) => (
-        <a href={`/news/${row.id}`} class="flex items-start gap-4 group">
+        <a href={`/news/${row.id}`} class="flex items-start gap-4 group lg:bg-white lg:border lg:border-gray-100 lg:rounded-2xl lg:p-3 lg:hover:border-mwa-burgundy/30 lg:transition-colors">
           <div class="shrink-0 w-24 h-24 rounded-2xl overflow-hidden bg-gray-100">
             {row.image_url ? (
               <img
