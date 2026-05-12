@@ -14,6 +14,13 @@ interface Env {
   GOOGLE_OAUTH_CLIENT_SECRET?: string;
   /** Optional override for callback URL; defaults to `${origin}/api/auth/google/callback`. */
   GOOGLE_OAUTH_REDIRECT_URI?: string;
+  /**
+   * Comma-separated list of Gmail addresses that get auto-promoted to admin
+   * on their first verified Google OAuth login. Other auth methods
+   * (email/password) are NOT auto-promoted since email ownership is unverified.
+   * Example: "owner@gmail.com,partner@gmail.com"
+   */
+  ADMIN_EMAILS?: string;
 }
 
 declare namespace App {

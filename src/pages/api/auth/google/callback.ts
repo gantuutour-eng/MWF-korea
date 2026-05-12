@@ -149,6 +149,25 @@ export const GET: APIRoute = async ({ request, url, locals }) => {
     }
   }
 
+  // 3b) Auto-promote allow-listed Google emails to admin.
+  //     Gated on Google's email_verified flag to prevent spoofing via
+  //     email/password registration on the same address.
+  if (
+    user.role !== "admin" &&
+    profile.email_verified === true &&
+    env.ADMIN_EMAILS
+  ) {
+    const allowList = env.ADMIN_EMAILS.split(",")
+      .map((e) => e.trim().toLowerCase())
+      .filter(Boolean);
+    if (allowList.includes(user.email.toLowerCase())) {
+      await env.DB.prepare("UPDATE users SET role = 'admin' WHERE id = ?1")
+        .bind(user.id)
+        .run();
+      user = { ...user, role: "admin" };
+    }
+  }
+
   // 4) Start session
   const token = await startSession(env.SESSIONS, user.id);
 

@@ -12,3 +12,7 @@ GOOGLE_OAUTH_CLIENT_ID="123456789-xxxxxxxxxx.apps.googleusercontent.com"
 GOOGLE_OAUTH_CLIENT_SECRET="GOCSPX-xxxxxxxxxxxxxxxxxxxxxxxxx"
 # Optional override (default: ${origin}/api/auth/google/callback)
 # GOOGLE_OAUTH_REDIRECT_URI="https://your-domain.example/api/auth/google/callback"
+
+# Comma-separated Gmail addresses to auto-promote to admin on Google login.
+# Only works through Google OAuth (email ownership is verified).
+ADMIN_EMAILS="your.email@gmail.com"

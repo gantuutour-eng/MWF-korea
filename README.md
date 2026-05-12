@@ -84,16 +84,35 @@ Tone 값(포트폴리오): `orange | purple | rose | emerald | blue | amber`
 
 ## 관리자 권한 부여
 
-`POST /api/auth/register`로 가입한 사용자는 기본 `role='member'`. 관리자로 승격시키려면 D1에 직접 쿼리:
+가입 직후 기본 `role='member'`. 두 가지 방법으로 admin 승격 가능:
+
+### A. Google 이메일 자동 승격 (권장)
+
+`ADMIN_EMAILS` 환경변수에 Gmail 주소를 콤마 구분으로 등록한 뒤, 그 이메일로 Google 로그인하면 콜백에서 자동으로 `role='admin'`이 됩니다. Google이 이메일 소유를 확인(`email_verified: true`)한 경우에만 동작.
+
+- 로컬: `.dev.vars`에 `ADMIN_EMAILS="you@gmail.com"` 추가
+- 프로덕션: `npx wrangler pages secret put ADMIN_EMAILS` → `you@gmail.com,partner@gmail.com` 형식
+
+### B. SQL 직접 승격
+
+이메일/비밀번호로만 가입한 사용자나 즉시 승격이 필요할 때:
 
 ```bash
+# 로컬
 npx wrangler d1 execute mwa-korea-db --local --command \
+  "UPDATE users SET role='admin' WHERE email='admin@example.com'"
+
+# 프로덕션
+npx wrangler d1 execute mwa-korea-db --remote --command \
   "UPDATE users SET role='admin' WHERE email='admin@example.com'"
 ```
 
 승격된 사용자는 다음 채널 사용 가능:
-- `POST /api/news`, `POST /api/portfolio/programs`, `POST /api/portfolio/stats` — 콘텐츠 작성
+- `/admin` 대시보드, 모든 admin 페이지 접근
+- `POST /api/news`, `POST /api/portfolio/programs`, `POST /api/portfolio/stats`, `POST /api/events`, `POST /api/hero-slides` — 콘텐츠 작성
 - `/admin/chat` — 회원과의 채팅 모두 열람·응답
+- `/admin/payments` — 회원권 결제 확정/거절
+- `/admin/users` — 다른 사용자의 role 변경
 
 ## 디자인 토큰
 
