@@ -68,7 +68,7 @@ const TONES = ["orange", "purple", "rose", "emerald", "blue", "amber"] as const;
       <span class="text-xs text-gray-400">{programs.length} ширхэг</span>
     </div>
 
-    <div class="space-y-2 mb-3">
+    <div class="space-y-2 mb-3" data-sortable="programs">
       {
         programs.length === 0 && (
           <div class="text-center py-6 text-gray-400 text-sm bg-gray-50 rounded-2xl">
@@ -80,7 +80,21 @@ const TONES = ["orange", "purple", "rose", "emerald", "blue", "amber"] as const;
         programs.map((p) => {
           const tc = toneClasses(p.tone);
           return (
-            <article class="bg-white border border-gray-100 rounded-2xl p-3 flex items-start gap-3">
+            <article
+              class="bg-white border border-gray-100 rounded-2xl p-3 flex items-start gap-2"
+              data-program-id={p.id}
+              data-sort-item
+            >
+              <button
+                type="button"
+                aria-label="Эрэмбэ өөрчлөх"
+                class="touch-none shrink-0 self-stretch flex items-center text-gray-300 hover:text-mwa-burgundy active:text-mwa-burgundy cursor-grab active:cursor-grabbing px-0.5"
+                data-sort-handle
+              >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path d="M4 6h16M4 12h16M4 18h16" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+                </svg>
+              </button>
               <div
                 class={`w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0 ${tc.icon}`}
               >
@@ -97,7 +111,6 @@ const TONES = ["orange", "purple", "rose", "emerald", "blue", "amber"] as const;
                   {p.description}
                 </p>
               </div>
-              <div class="text-[10px] text-gray-400 font-mono shrink-0">#{p.sort_order}</div>
             </article>
           );
         })
@@ -197,7 +210,7 @@ const TONES = ["orange", "purple", "rose", "emerald", "blue", "amber"] as const;
       <span class="text-xs text-gray-400">{stats.length} ширхэг</span>
     </div>
 
-    <div class="grid grid-cols-2 gap-2 mb-3">
+    <div class="grid grid-cols-2 gap-2 mb-3" data-sortable="stats">
       {
         stats.length === 0 && (
           <div class="col-span-2 text-center py-6 text-gray-400 text-sm bg-gray-50 rounded-2xl">
@@ -209,13 +222,24 @@ const TONES = ["orange", "purple", "rose", "emerald", "blue", "amber"] as const;
         stats.map((s) => {
           const tc = toneClasses(s.tone);
           return (
-            <div class={`rounded-xl p-3 text-center ${tc.stat}`}>
+            <div
+              class={`relative rounded-xl p-3 text-center ${tc.stat}`}
+              data-stat-id={s.id}
+              data-sort-item
+            >
+              <button
+                type="button"
+                aria-label="Эрэмбэ өөрчлөх"
+                class="absolute top-1.5 right-1.5 touch-none w-6 h-6 rounded-md bg-white/60 hover:bg-white text-gray-500 flex items-center justify-center cursor-grab active:cursor-grabbing"
+                data-sort-handle
+              >
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path d="M4 6h16M4 12h16M4 18h16" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+                </svg>
+              </button>
               <div class="text-xl font-extrabold">{s.value}</div>
               <div class="text-[10px] text-mwa-text-secondary mt-0.5">
                 {s.label}
-              </div>
-              <div class="text-[9px] text-gray-400 font-mono mt-1">
-                #{s.sort_order}
               </div>
             </div>
           );
@@ -284,6 +308,8 @@ const TONES = ["orange", "purple", "rose", "emerald", "blue", "amber"] as const;
 </AdminLayout>
 
 <script>
+  import Sortable from "sortablejs";
+
   interface ApiResponse {
     ok?: boolean;
     id?: number;
@@ -294,6 +320,65 @@ const TONES = ["orange", "purple", "rose", "emerald", "blue", "amber"] as const;
     program: "/api/portfolio/programs",
     stat: "/api/portfolio/stats",
   };
+
+  // ---------- Drag-and-drop reordering ----------
+  const reorderToast = document.createElement("div");
+  reorderToast.className =
+    "fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 bg-mwa-text-primary text-white text-xs font-semibold rounded-full shadow-lg opacity-0 pointer-events-none transition-opacity duration-200";
+  reorderToast.setAttribute("role", "status");
+  reorderToast.setAttribute("aria-live", "polite");
+  document.body.appendChild(reorderToast);
+  let reorderToastTimer: number | null = null;
+  function showReorderToast(text: string) {
+    reorderToast.textContent = text;
+    reorderToast.classList.remove("opacity-0");
+    reorderToast.classList.add("opacity-100");
+    if (reorderToastTimer) window.clearTimeout(reorderToastTimer);
+    reorderToastTimer = window.setTimeout(() => {
+      reorderToast.classList.remove("opacity-100");
+      reorderToast.classList.add("opacity-0");
+    }, 1800);
+  }
+
+  function wireSortable(kind: "programs" | "stats", idAttr: string) {
+    const root = document.querySelector<HTMLElement>(
+      `[data-sortable="${kind}"]`,
+    );
+    if (!root || root.children.length <= 1) return;
+    Sortable.create(root, {
+      handle: "[data-sort-handle]",
+      animation: 180,
+      ghostClass: "opacity-40",
+      onEnd: async () => {
+        const ids = Array.from(
+          root.querySelectorAll<HTMLElement>("[data-sort-item]"),
+        )
+          .map((el) => Number(el.getAttribute(idAttr)))
+          .filter((n) => Number.isFinite(n));
+        if (ids.length === 0) return;
+        try {
+          const res = await fetch(`/api/portfolio/${kind}/reorder`, {
+            method: "POST",
+            credentials: "same-origin",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ ids }),
+          });
+          if (res.ok) showReorderToast("Эрэмбэ хадгалагдлаа");
+          else {
+            const data = (await res.json().catch(() => ({}))) as {
+              error?: string;
+            };
+            showReorderToast(data.error ?? "Алдаа гарлаа");
+          }
+        } catch {
+          showReorderToast("Сүлжээний алдаа");
+        }
+      },
+    });
+  }
+
+  wireSortable("programs", "data-program-id");
+  wireSortable("stats", "data-stat-id");
 
   document.querySelectorAll<HTMLFormElement>("[data-form]").forEach((form) => {
     const kind = form.dataset.form ?? "";

@@ -16,6 +16,8 @@ function fmtDate(unix: number): string {
   const day = String(d.getDate()).padStart(2, "0");
   return `${y}.${m}.${day}`;
 }
+
+const HOME_LIMIT = 6;
 ---
 
 <AdminLayout title="Мэдээ" active="news">
@@ -54,9 +56,22 @@ function fmtDate(unix: number): string {
       </a>
     </div>
 
+    {rows.length > 1 && (
+      <div class="mx-5 lg:mx-0 mt-2 p-3 bg-mwa-burgundy/5 border border-mwa-burgundy/20 rounded-xl flex items-start gap-2">
+        <svg class="w-4 h-4 text-mwa-burgundy mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path d="M4 8h16M4 12h10M4 16h16" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+        </svg>
+        <div class="text-[11px] text-mwa-text-secondary leading-snug">
+          Эрэмбийг өөрчлөхдөө карточкын зүүн дээд буланд байгаа <strong>≡</strong> тэмдэгээс барьж зөөнө.
+          Эхний <strong>{HOME_LIMIT}</strong> карточка нь нүүр хуудсанд харагдана.
+        </div>
+      </div>
+    )}
+
     <section
       class="px-5 lg:px-0 pt-4 pb-10 space-y-2 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-3"
       data-purpose="news-list"
+      data-sortable
     >
       {
         rows.length === 0 && (
@@ -75,12 +90,28 @@ function fmtDate(unix: number): string {
       }
 
       {
-        rows.map((row) => (
+        rows.map((row, i) => (
           <article
-            class="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden"
+            class="relative bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden"
             data-news-id={row.id}
+            data-sort-item
           >
+            {i < HOME_LIMIT && (
+              <span class="absolute top-2 right-2 z-10 text-[10px] font-bold bg-mwa-burgundy text-white px-1.5 py-0.5 rounded">
+                Нүүр #{i + 1}
+              </span>
+            )}
             <div class="flex gap-3 p-3">
+              <button
+                type="button"
+                aria-label="Эрэмбэ өөрчлөх"
+                class="touch-none shrink-0 self-stretch flex items-center justify-center w-7 -mx-1 text-gray-300 hover:text-mwa-burgundy active:text-mwa-burgundy cursor-grab active:cursor-grabbing"
+                data-sort-handle
+              >
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path d="M4 6h16M4 12h16M4 18h16" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"/>
+                </svg>
+              </button>
               <div class="w-20 h-20 shrink-0 rounded-xl overflow-hidden bg-gray-100">
                 {row.cover_url ? (
                   <img
@@ -94,7 +125,7 @@ function fmtDate(unix: number): string {
                 )}
               </div>
               <div class="flex-1 min-w-0">
-                <div class="flex items-center gap-1.5 mb-1">
+                <div class="flex items-center gap-1.5 mb-1 flex-wrap">
                   <span
                     class={`inline-block text-[10px] font-bold px-1.5 py-0.5 rounded ${
                       row.category === "notice"
@@ -145,10 +176,21 @@ function fmtDate(unix: number): string {
         ))
       }
     </section>
+
+    <div
+      id="reorder-toast"
+      class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-4 py-2.5 bg-mwa-text-primary text-white text-xs font-semibold rounded-full shadow-lg opacity-0 pointer-events-none transition-opacity duration-200"
+      role="status"
+      aria-live="polite"
+    >
+    </div>
   </div>
 </AdminLayout>
 
 <script>
+  import Sortable from "sortablejs";
+
+  // ---------- Delete ----------
   document
     .querySelectorAll<HTMLButtonElement>('[data-action="delete"]')
     .forEach((btn) => {
@@ -178,4 +220,90 @@ function fmtDate(unix: number): string {
         }
       });
     });
+
+  // ---------- Sortable drag-and-drop ----------
+  const HOME_LIMIT = 6;
+  const list = document.querySelector<HTMLElement>("[data-sortable]");
+  const toast = document.getElementById("reorder-toast");
+
+  let toastTimer: number | null = null;
+  function showToast(text: string) {
+    if (!toast) return;
+    toast.textContent = text;
+    toast.classList.remove("opacity-0");
+    toast.classList.add("opacity-100");
+    if (toastTimer) window.clearTimeout(toastTimer);
+    toastTimer = window.setTimeout(() => {
+      toast.classList.remove("opacity-100");
+      toast.classList.add("opacity-0");
+    }, 1800);
+  }
+
+  function readIds(): number[] {
+    if (!list) return [];
+    return Array.from(list.querySelectorAll<HTMLElement>("[data-sort-item]"))
+      .map((el) => Number(el.dataset.newsId))
+      .filter((n) => Number.isFinite(n));
+  }
+
+  function refreshHomeBadges() {
+    if (!list) return;
+    const items = list.querySelectorAll<HTMLElement>("[data-sort-item]");
+    items.forEach((item, idx) => {
+      const existing = item.querySelector<HTMLElement>("[data-home-badge]");
+      if (idx < HOME_LIMIT) {
+        if (existing) {
+          existing.textContent = `Нүүр #${idx + 1}`;
+        } else {
+          const badge = document.createElement("span");
+          badge.dataset.homeBadge = "";
+          badge.className = "absolute top-2 right-2 z-10 text-[10px] font-bold bg-mwa-burgundy text-white px-1.5 py-0.5 rounded";
+          badge.textContent = `Нүүр #${idx + 1}`;
+          item.appendChild(badge);
+        }
+      } else if (existing) {
+        existing.remove();
+      }
+    });
+  }
+
+  // Tag the SSR-rendered badges so refreshHomeBadges() can find them.
+  list?.querySelectorAll<HTMLElement>("[data-sort-item] > span").forEach((s) => {
+    if (s.textContent?.startsWith("Нүүр #")) s.dataset.homeBadge = "";
+  });
+
+  async function save() {
+    const ids = readIds();
+    if (ids.length === 0) return;
+    try {
+      const res = await fetch("/api/news/reorder", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ ids }),
+      });
+      if (res.ok) {
+        showToast("Эрэмбэ хадгалагдлаа");
+      } else {
+        const data = (await res.json().catch(() => ({}))) as { error?: string };
+        showToast(data.error ?? "Алдаа гарлаа");
+      }
+    } catch {
+      showToast("Сүлжээний алдаа");
+    }
+  }
+
+  if (list && list.children.length > 1) {
+    Sortable.create(list, {
+      handle: "[data-sort-handle]",
+      animation: 180,
+      ghostClass: "opacity-40",
+      chosenClass: "ring-2",
+      dragClass: "shadow-2xl",
+      onEnd: () => {
+        refreshHomeBadges();
+        save();
+      },
+    });
+  }
 </script>

@@ -124,13 +124,18 @@ const types: { value: EventType; label: string }[] = EVENT_TYPES.map((t) => ({
         data-purpose="dropzone"
       >
         <input
+          id="event-new-image-input"
           type="file"
           name="image"
           accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml"
           class="hidden"
           data-image-input
         />
-        <div data-empty-state>
+        <label
+          for="event-new-image-input"
+          class="block cursor-pointer"
+          data-empty-state
+        >
           <svg
             class="w-10 h-10 mx-auto text-gray-300 mb-2"
             fill="none"
@@ -144,17 +149,13 @@ const types: { value: EventType; label: string }[] = EVENT_TYPES.map((t) => ({
               stroke-width="2"
             />
           </svg>
-          <button
-            type="button"
-            class="text-sm font-bold text-mwa-burgundy"
-            data-pick-image
-          >
+          <span class="text-sm font-bold text-mwa-burgundy block">
             Зураг сонгох
-          </button>
+          </span>
           <p class="text-[11px] text-gray-400 mt-1">
             PNG, JPG, WebP, GIF, SVG · 5MB хүртэл · 16:9 хэмжээ зөвлөмжтэй
           </p>
-        </div>
+        </label>
         <div class="hidden" data-preview-state>
           <div class="aspect-[16/9] rounded-lg overflow-hidden bg-gray-100 mb-2">
             <img

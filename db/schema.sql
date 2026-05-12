@@ -39,7 +39,8 @@ CREATE TABLE news (
   cover_url TEXT,                            -- wide hero image for home carousel + detail
   category TEXT NOT NULL DEFAULT 'notice',   -- notice | article
   author_id INTEGER REFERENCES users(id),
-  published_at INTEGER NOT NULL DEFAULT (unixepoch())
+  published_at INTEGER NOT NULL DEFAULT (unixepoch()),
+  sort_order INTEGER NOT NULL DEFAULT 0      -- higher = appears first on home/list (manual ordering)
 );
 
 CREATE TABLE events (
@@ -78,6 +79,7 @@ CREATE TABLE portfolio_stats (
 
 CREATE INDEX idx_news_published ON news(published_at DESC);
 CREATE INDEX idx_news_category ON news(category);
+CREATE INDEX idx_news_sort_order ON news(sort_order DESC, published_at DESC);
 CREATE INDEX idx_events_start ON events(start_at);
 CREATE INDEX idx_events_type ON events(type);
 CREATE INDEX idx_portfolio_programs_sort ON portfolio_programs(sort_order);

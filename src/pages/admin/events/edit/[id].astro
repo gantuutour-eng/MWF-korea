@@ -135,6 +135,7 @@ const endLocal = row.end_at ? toLocalInput(row.end_at) : "";
           data-purpose="dropzone"
         >
           <input
+            id="event-edit-image-input"
             type="file"
             name="image"
             accept="image/png,image/jpeg,image/webp,image/gif,image/svg+xml"
@@ -144,17 +145,21 @@ const endLocal = row.end_at ? toLocalInput(row.end_at) : "";
           <input type="hidden" name="clear_image" value="0" data-clear-image-input />
 
           {/* When server has no existing image, start in empty state. */}
-          <div data-empty-state class={row.image_url ? "hidden" : ""}>
+          <label
+            for="event-edit-image-input"
+            class={`block cursor-pointer ${row.image_url ? "hidden" : ""}`}
+            data-empty-state
+          >
             <svg class="w-10 h-10 mx-auto text-gray-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
             </svg>
-            <button type="button" class="text-sm font-bold text-mwa-burgundy" data-pick-image>
+            <span class="text-sm font-bold text-mwa-burgundy block">
               Зураг сонгох
-            </button>
+            </span>
             <p class="text-[11px] text-gray-400 mt-1">
               PNG, JPG, WebP · 5MB хүртэл
             </p>
-          </div>
+          </label>
 
           <div class={row.image_url ? "" : "hidden"} data-preview-state>
             <div class="aspect-[16/9] rounded-lg overflow-hidden bg-gray-100 mb-2">

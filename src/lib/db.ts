@@ -10,10 +10,11 @@ export interface NewsRow {
   category: NewsCategory;
   author_id: number | null;
   published_at: number;
+  sort_order: number;
 }
 
 const NEWS_COLS =
-  "id, title, subtitle, body, image_url, cover_url, category, author_id, published_at";
+  "id, title, subtitle, body, image_url, cover_url, category, author_id, published_at, sort_order";
 
 export type EventType =
   | "seminar"
@@ -73,7 +74,7 @@ export async function listNews(
   if (options.category) {
     const { results } = await db
       .prepare(
-        `SELECT ${NEWS_COLS} FROM news WHERE category = ?1 AND id != ?2 ORDER BY published_at DESC LIMIT ?3 OFFSET ?4`,
+        `SELECT ${NEWS_COLS} FROM news WHERE category = ?1 AND id != ?2 ORDER BY sort_order DESC, published_at DESC, id DESC LIMIT ?3 OFFSET ?4`,
       )
       .bind(options.category, excludeId, limit, offset)
       .all<NewsRow>();
@@ -81,11 +82,80 @@ export async function listNews(
   }
   const { results } = await db
     .prepare(
-      `SELECT ${NEWS_COLS} FROM news WHERE id != ?1 ORDER BY published_at DESC LIMIT ?2 OFFSET ?3`,
+      `SELECT ${NEWS_COLS} FROM news WHERE id != ?1 ORDER BY sort_order DESC, published_at DESC, id DESC LIMIT ?2 OFFSET ?3`,
     )
     .bind(excludeId, limit, offset)
     .all<NewsRow>();
   return results ?? [];
+}
+
+/**
+ * Assign explicit sort_order values from a list of ids in the desired
+ * display order. ids[0] becomes the highest sort_order so it appears
+ * first on the home page (news list query orders sort_order DESC).
+ */
+export async function reorderNews(
+  db: D1Database,
+  ids: number[],
+): Promise<void> {
+  if (ids.length === 0) return;
+  const stmts = ids.map((id, idx) =>
+    db
+      .prepare("UPDATE news SET sort_order = ?1 WHERE id = ?2")
+      .bind(ids.length - idx, id),
+  );
+  await db.batch(stmts);
+}
+
+/**
+ * Reorder hero_slides. Existing query orders sort_order ASC so ids[0]
+ * needs the smallest value (0, 1, 2, ...) to render first.
+ */
+export async function reorderHeroSlides(
+  db: D1Database,
+  ids: number[],
+): Promise<void> {
+  if (ids.length === 0) return;
+  const stmts = ids.map((id, idx) =>
+    db
+      .prepare(
+        "UPDATE hero_slides SET sort_order = ?1, updated_at = unixepoch() WHERE id = ?2",
+      )
+      .bind(idx, id),
+  );
+  await db.batch(stmts);
+}
+
+/** portfolio_programs query orders sort_order ASC — same convention. */
+export async function reorderPortfolioPrograms(
+  db: D1Database,
+  ids: number[],
+): Promise<void> {
+  if (ids.length === 0) return;
+  const stmts = ids.map((id, idx) =>
+    db
+      .prepare(
+        "UPDATE portfolio_programs SET sort_order = ?1, updated_at = unixepoch() WHERE id = ?2",
+      )
+      .bind(idx, id),
+  );
+  await db.batch(stmts);
+}
+
+/** portfolio_stats query orders sort_order ASC — same convention. */
+export async function reorderPortfolioStats(
+  db: D1Database,
+  ids: number[],
+): Promise<void> {
+  if (ids.length === 0) return;
+  const stmts = ids.map((id, idx) =>
+    db
+      .prepare(
+        "UPDATE portfolio_stats SET sort_order = ?1, updated_at = unixepoch() WHERE id = ?2",
+      )
+      .bind(idx, id),
+  );
+  await db.batch(stmts);
 }
 
 export async function getNews(
