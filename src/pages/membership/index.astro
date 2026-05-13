@@ -24,7 +24,7 @@ const toneStyles = {
 
 <AppLayout title="Гишүүнчлэл" activeTab="profile" showHeader={false}>
   <header
-    class="px-3 pt-6 pb-3 flex items-center"
+    class="lg:hidden px-3 pt-6 pb-3 flex items-center"
     data-purpose="membership-header"
   >
     <a href="/" aria-label="Буцах" class="p-2">
@@ -45,7 +45,9 @@ const toneStyles = {
     <div class="w-10"></div>
   </header>
 
-  <section class="px-5 mb-6" data-purpose="hero">
+  <div class="lg:max-w-5xl lg:mx-auto lg:px-8 lg:py-6">
+
+  <section class="px-5 lg:px-0 mb-6" data-purpose="hero">
     <div
       class="relative bg-mwa-burgundy text-white rounded-[24px] p-5 pr-24 overflow-hidden"
     >
@@ -64,14 +66,17 @@ const toneStyles = {
     </div>
   </section>
 
-  <section class="px-5 mb-3" data-purpose="plans-intro">
+  <section class="px-5 lg:px-0 mb-3" data-purpose="plans-intro">
     <h2 class="font-bold text-base mb-1">Гишүүнчлэлийн сонголт</h2>
     <p class="text-xs text-mwa-text-secondary">
       Та өөрт тохирох эрхээ сонгоно уу.
     </p>
   </section>
 
-  <section class="px-5 space-y-4 mb-8" data-purpose="plans">
+  <section
+    class="px-5 lg:px-0 space-y-4 mb-8 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-5"
+    data-purpose="plans"
+  >
     {
       PLANS.map((plan) => {
         const s = toneStyles[plan.tone];
@@ -174,9 +179,9 @@ const toneStyles = {
     }
   </section>
 
-  <section class="px-5 mb-8" data-purpose="membership-info">
+  <section class="px-5 lg:px-0 mb-8" data-purpose="membership-info">
     <h2 class="font-bold text-base mb-3">Гишүүнчлэлийн талаар</h2>
-    <div class="space-y-2.5">
+    <div class="space-y-2.5 lg:space-y-0 lg:grid lg:grid-cols-2 lg:gap-3">
       <article class="bg-white border border-gray-100 rounded-2xl p-4 flex items-start gap-3">
         <div class="w-10 h-10 rounded-xl bg-mwa-burgundy/10 text-mwa-burgundy flex items-center justify-center shrink-0">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -247,4 +252,6 @@ const toneStyles = {
       </article>
     </div>
   </section>
+
+  </div>
 </AppLayout>

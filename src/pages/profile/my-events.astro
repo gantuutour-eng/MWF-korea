@@ -31,7 +31,7 @@ const tabs = [
 ---
 
 <AppLayout title="Миний үйл ажиллагаа" activeTab="profile" showHeader={false}>
-  <header class="px-3 pt-6 pb-3 flex items-center bg-white border-b border-gray-100 sticky top-0 z-20">
+  <header class="lg:hidden px-3 pt-6 pb-3 flex items-center bg-white border-b border-gray-100 sticky top-0 z-20">
     <a href="/profile" aria-label="Буцах" class="p-2">
       <svg
         class="h-6 w-6 text-mwa-text-primary"
@@ -49,6 +49,8 @@ const tabs = [
     <h1 class="flex-1 text-center text-lg font-bold">Миний үйл ажиллагаа</h1>
     <div class="w-10"></div>
   </header>
+
+  <div data-pc-wrapper class="lg:max-w-3xl lg:mx-auto lg:px-8 lg:py-6 lg:bg-white lg:my-6 lg:rounded-2xl lg:border lg:border-gray-100 lg:shadow-sm">
 
   <nav class="px-5 border-b border-gray-100 flex items-center gap-1">
     {
@@ -138,4 +140,5 @@ const tabs = [
       })
     }
   </section>
+  </div>
 </AppLayout>

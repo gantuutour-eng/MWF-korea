@@ -102,8 +102,7 @@ const statusInfo: Record<
 ---
 
 <AppLayout title="Миний гишүүнчлэл" activeTab="profile" showHeader={false}>
-  <header
-    class="px-3 pt-6 pb-3 flex items-center"
+  <header class="lg:hidden px-3 pt-6 pb-3 flex items-center"
     data-purpose="my-membership-header"
   >
     <a href="/profile" aria-label="Буцах" class="p-2">
@@ -123,6 +122,8 @@ const statusInfo: Record<
     <h1 class="flex-1 text-center text-lg font-bold">Миний гишүүнчлэл</h1>
     <div class="w-10"></div>
   </header>
+
+  <div data-pc-wrapper class="lg:max-w-3xl lg:mx-auto lg:px-8 lg:py-6 lg:bg-white lg:my-6 lg:rounded-2xl lg:border lg:border-gray-100 lg:shadow-sm">
 
   <section class="px-5 mb-6" data-purpose="active-card">
     {
@@ -286,4 +287,5 @@ const statusInfo: Record<
       </section>
     )
   }
+  </div>
 </AppLayout>

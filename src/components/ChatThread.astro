@@ -46,7 +46,7 @@ const lastId = initialMessages.at(-1)?.id ?? 0;
 ---
 
 <div
-  class="flex flex-col min-h-[calc(100vh-64px)]"
+  class="flex flex-col min-h-[calc(100vh-64px)] lg:max-w-3xl lg:mx-auto lg:my-6 lg:bg-white lg:border lg:border-gray-100 lg:rounded-2xl lg:shadow-sm lg:min-h-[70vh] lg:overflow-hidden"
   data-chat-root
   {...dataset}
   data-last-id={String(lastId)}

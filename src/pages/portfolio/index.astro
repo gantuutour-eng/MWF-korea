@@ -23,8 +23,7 @@ function eventDateLine(unix: number): string {
 ---
 
 <AppLayout title="Хийгдсэн ажлууд" showHeader={false}>
-  <header
-    class="px-3 pt-6 pb-3 flex items-center"
+  <header class="lg:hidden px-3 pt-6 pb-3 flex items-center"
     data-purpose="portfolio-header"
   >
     <a href="/" aria-label="Буцах" class="p-2">
@@ -44,6 +43,8 @@ function eventDateLine(unix: number): string {
     <h1 class="flex-1 text-center text-lg font-bold">Хийгдсэн ажлууд</h1>
     <div class="w-10"></div>
   </header>
+
+  <div data-pc-wrapper class="lg:max-w-5xl lg:mx-auto lg:px-8 lg:py-6">
 
   <section class="px-5 mb-6" data-purpose="portfolio-hero">
     <div
@@ -211,4 +212,5 @@ function eventDateLine(unix: number): string {
       </a>
     </div>
   </section>
+  </div>
 </AppLayout>
