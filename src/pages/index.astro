@@ -1,9 +1,9 @@
 ---
 import AppLayout from "../layouts/AppLayout.astro";
-import HeroBanner from "../components/HeroBanner.astro";
 import HeroCarousel from "../components/HeroCarousel.astro";
 import NewsCarousel from "../components/NewsCarousel.astro";
 import ReviewsMarquee from "../components/ReviewsMarquee.astro";
+import EventsBannerCarousel from "../components/EventsBannerCarousel.astro";
 import SectionTitle from "../components/SectionTitle.astro";
 import GridCard from "../components/GridCard.astro";
 import { listNews, listHeroSlides, listEvents } from "../lib/db";
@@ -118,12 +118,7 @@ function leadParagraph(body: string): string {
 
     <ReviewsMarquee />
 
-    <HeroBanner
-      variant="secondary"
-      title="Эмэгтэйчүүдийн эрх"
-      subtitle="Таны боломж, Таны ирээдүй"
-      href="/about"
-    />
+    <EventsBannerCarousel events={upcomingEvents} />
 
     <footer class="px-5 pt-8 pb-4 text-center" data-purpose="home-footer">
       <div class="text-[11px] text-gray-400 leading-relaxed">
@@ -371,37 +366,9 @@ function leadParagraph(body: string): string {
       <ReviewsMarquee />
     </section>
 
-    {/* ---- Membership CTA banner ---- */}
-    <section class="px-12 pb-16">
-      <a
-        href="/membership"
-        class="block bg-mwa-burgundy text-white px-10 py-12 relative overflow-hidden group"
-      >
-        <div class="relative z-10 flex items-end justify-between gap-8">
-          <div class="max-w-2xl">
-            <div class="ed-label text-white/80 mb-3">
-              <span class="text-white/90">Гишүүнчлэл</span>
-            </div>
-            <h2 class="font-display text-4xl xl:text-5xl font-extrabold leading-[1.1] tracking-tight mb-3">
-              Эмэгтэйчүүдийн эрх
-            </h2>
-            <p class="text-lg opacity-90 font-light">
-              Таны боломж · Таны ирээдүй
-            </p>
-          </div>
-          <div class="flex items-center gap-3 shrink-0">
-            <span class="border-b border-white pb-0.5 text-sm font-bold">
-              Гишүүн болох
-            </span>
-            <span class="text-2xl" aria-hidden="true">›</span>
-          </div>
-        </div>
-        <img
-          src="/images/logo.png"
-          alt=""
-          class="absolute right-[-40px] top-1/2 -translate-y-1/2 w-64 h-64 object-contain opacity-15 pointer-events-none"
-        />
-      </a>
+    {/* ---- Events banner carousel ---- */}
+    <section class="pb-16">
+      <EventsBannerCarousel events={upcomingEvents} />
     </section>
   </div>
 </AppLayout>
