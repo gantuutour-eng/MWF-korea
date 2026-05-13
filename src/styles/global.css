@@ -14,8 +14,9 @@
   --font-sans:
     "Inter", ui-sans-serif, system-ui, -apple-system,
     "Segoe UI", Roboto, sans-serif;
-  --font-display:
-    "Playfair Display", "Cormorant Garamond", Georgia, serif;
+  /* Display font alias points at the same Inter stack so any
+     leftover `.font-display` usage stays consistent. */
+  --font-display: var(--font-sans);
 
   --radius-mwa-round: 12px;
   --radius-mwa-banner: 24px;
