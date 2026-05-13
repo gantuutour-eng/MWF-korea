@@ -35,7 +35,20 @@ const {
     <main
       class="max-w-md lg:max-w-6xl mx-auto min-h-screen bg-white pb-24 lg:pb-16 relative overflow-x-hidden lg:shadow-sm"
     >
-      {showHeader && <Header />}
+      {/*
+        Mobile: respect the page's showHeader prop (detail pages typically
+        render their own back-arrow header instead of the global one).
+        Desktop: always render the global header so users keep the primary
+        nav strip available everywhere — getting stuck on a detail page
+        with no way to navigate is worse than a small duplication.
+      */}
+      {showHeader ? (
+        <Header />
+      ) : (
+        <div class="hidden lg:block">
+          <Header />
+        </div>
+      )}
       <slot />
       {showBottomNav && <BottomNav active={activeTab} />}
     </main>
