@@ -152,20 +152,20 @@ function fmtAt(unix: number, kind: "news" | "event"): string {
 ---
 
 <header
-  class="px-5 lg:px-8 pt-6 lg:pt-5 pb-4 flex items-center justify-between"
+  class="px-5 lg:px-12 pt-6 lg:pt-5 pb-4 lg:pb-4 flex items-center justify-between lg:bg-mwa-cream lg:border-b lg:border-mwa-ink/90"
   data-purpose="top-header"
 >
   <a href="/" class="flex items-center gap-3">
     <img
       alt="MWA Logo"
-      class="w-16 h-16 lg:w-12 lg:h-12 object-contain"
+      class="w-16 h-16 lg:w-11 lg:h-11 object-contain"
       src="/images/logo.png"
     />
-    <div class="flex flex-col">
-      <span class="text-mwa-burgundy font-bold text-lg lg:text-base leading-tight"
+    <div class="flex flex-col leading-tight">
+      <span class="text-mwa-burgundy font-bold text-lg lg:text-[11px] lg:tracking-[0.2em] lg:uppercase lg:text-mwa-ink/70 lg:font-extrabold"
         >БНСУ дахь</span
       >
-      <span class="text-mwa-burgundy font-bold text-lg lg:text-base leading-tight"
+      <span class="text-mwa-burgundy font-bold text-lg lg:text-[15px] lg:font-extrabold lg:text-mwa-ink lg:tracking-tight"
         >салбар зөвлөл</span
       >
     </div>
@@ -224,7 +224,7 @@ function fmtAt(unix: number, kind: "news" | "event"): string {
 
 {/* ---------- Desktop primary navigation ---------- */}
 <nav
-  class="hidden lg:flex items-center gap-1 px-8 pb-3 border-b border-gray-100"
+  class="hidden lg:flex items-center justify-center gap-2 px-12 py-2.5 bg-mwa-cream border-b border-mwa-ink/90"
   aria-label="Үндсэн цэс"
 >
   {
@@ -234,13 +234,16 @@ function fmtAt(unix: number, kind: "news" | "event"): string {
       return (
         <a
           href={t.href}
-          class={`relative px-3 py-2 rounded-lg text-sm font-semibold transition-colors ${
+          class={`relative px-3 py-1.5 text-[13px] font-semibold tracking-wide transition-colors ${
             isActive
-              ? "text-mwa-burgundy bg-mwa-burgundy/5"
-              : "text-mwa-text-secondary hover:text-mwa-burgundy hover:bg-gray-50"
+              ? "text-mwa-burgundy"
+              : "text-mwa-ink hover:text-mwa-burgundy"
           }`}
         >
           {t.label}
+          {isActive && (
+            <span class="absolute left-3 right-3 -bottom-[7px] h-0.5 bg-mwa-burgundy" />
+          )}
           {showBadge && (
             <span class="ml-1.5 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 bg-mwa-burgundy text-white text-[10px] font-extrabold rounded-full align-middle">
               {chatUnread > 99 ? "99+" : chatUnread}

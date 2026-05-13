@@ -2,6 +2,7 @@
 import "../styles/global.css";
 import Header from "../components/Header.astro";
 import BottomNav from "../components/BottomNav.astro";
+import SiteFooter from "../components/SiteFooter.astro";
 
 interface Props {
   title?: string;
@@ -27,13 +28,13 @@ const {
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,500;0,700;0,800;1,500&display=swap"
       rel="stylesheet"
     />
   </head>
-  <body class="font-sans text-mwa-text-primary antialiased bg-white lg:bg-gray-50">
+  <body class="font-sans text-mwa-text-primary antialiased bg-white lg:bg-mwa-cream">
     <main
-      class="max-w-md lg:max-w-6xl mx-auto min-h-screen bg-white pb-24 lg:pb-16 relative overflow-x-hidden lg:shadow-sm"
+      class="max-w-md lg:max-w-7xl mx-auto min-h-screen bg-white lg:bg-mwa-cream pb-24 lg:pb-0 relative overflow-x-hidden"
     >
       {/*
         Mobile: respect the page's showHeader prop (detail pages typically
@@ -50,6 +51,7 @@ const {
         </div>
       )}
       <slot />
+      <SiteFooter />
       {showBottomNav && <BottomNav active={activeTab} />}
     </main>
   </body>

@@ -1,0 +1,136 @@
+---
+// Desktop-only multi-column footer in editorial magazine style.
+// Mobile uses each page's own inline footer (kept minimal there).
+
+interface FooterColumn {
+  title: string;
+  links: { label: string; href: string }[];
+}
+
+const columns: FooterColumn[] = [
+  {
+    title: "Холбоо",
+    links: [
+      { label: "Нүүр", href: "/" },
+      { label: "Мэдээ", href: "/news" },
+      { label: "Үйл ажиллагаа", href: "/events" },
+      { label: "Гишүүнчлэл", href: "/membership" },
+      { label: "Бидний тухай", href: "/about" },
+    ],
+  },
+  {
+    title: "Тухай",
+    links: [
+      { label: "Зөвлөл", href: "/about" },
+      { label: "Хийгдсэн ажлууд", href: "/portfolio" },
+      { label: "Зөвлөгөө, дэмжлэг", href: "/advice" },
+      { label: "Чат", href: "/chat" },
+    ],
+  },
+  {
+    title: "Холбогдох",
+    links: [
+      { label: "Сөүл, БНСУ", href: "#" },
+      { label: "manuhad.mwa@gmail.com", href: "mailto:manuhad.mwa@gmail.com" },
+    ],
+  },
+];
+
+const year = new Date().getFullYear();
+---
+
+<footer
+  class="hidden lg:block bg-mwa-cream border-t border-mwa-ink/90 mt-20"
+  data-purpose="site-footer"
+>
+  <div class="max-w-7xl mx-auto px-12 pt-14 pb-10">
+    <div class="grid grid-cols-12 gap-8 mb-12">
+      {/* Brand block */}
+      <div class="col-span-4">
+        <a href="/" class="flex items-center gap-3 mb-5">
+          <img
+            alt="MWA"
+            src="/images/logo.png"
+            class="w-12 h-12 object-contain"
+          />
+          <div class="leading-tight">
+            <div class="text-[11px] tracking-[0.2em] uppercase text-mwa-ink/70 font-extrabold">
+              БНСУ дахь
+            </div>
+            <div class="text-[15px] font-extrabold text-mwa-ink tracking-tight">
+              салбар зөвлөл
+            </div>
+          </div>
+        </a>
+        <p class="text-[13px] text-mwa-ink/70 leading-relaxed max-w-xs">
+          1924 оноос эхтэй Монголын Эмэгтэйчүүдийн Холбооны БНСУ дахь
+          салбар зөвлөл.
+        </p>
+        <div class="flex items-center gap-3 mt-5">
+          <span class="text-[10px] tracking-[0.2em] uppercase text-mwa-ink/60 font-bold">
+            Сошиал
+          </span>
+          <div class="flex items-center gap-2">
+            {["f", "in", "▶", "@"].map((s) => (
+              <a
+                href="#"
+                class="w-7 h-7 inline-flex items-center justify-center border border-mwa-ink/40 text-mwa-ink/70 text-[11px] font-bold hover:border-mwa-burgundy hover:text-mwa-burgundy transition-colors"
+                aria-label={s}
+              >
+                {s}
+              </a>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Sitemap columns */}
+      {
+        columns.map((col) => (
+          <div class="col-span-2">
+            <h4 class="ed-label mb-4">{col.title}</h4>
+            <ul class="space-y-2.5">
+              {col.links.map((l) => (
+                <li>
+                  <a
+                    href={l.href}
+                    class="text-[13px] text-mwa-ink/80 hover:text-mwa-burgundy transition-colors"
+                  >
+                    {l.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))
+      }
+
+      {/* Newsletter */}
+      <div class="col-span-2">
+        <h4 class="ed-label mb-4">Newsletter</h4>
+        <p class="text-[12px] text-mwa-ink/70 leading-relaxed mb-3">
+          Шинэ мэдээ + үйл ажиллагааг имэйлээр.
+        </p>
+        <a
+          href="/profile/register"
+          class="inline-flex items-center gap-1 text-[12px] font-bold text-mwa-burgundy border-b border-mwa-burgundy pb-0.5"
+        >
+          Бүртгүүлэх <span aria-hidden="true">›</span>
+        </a>
+      </div>
+    </div>
+
+    <div class="border-t border-mwa-ink/30 pt-6 flex items-center justify-between text-[11px] text-mwa-ink/60">
+      <span>© {year} MWA Korea. All rights reserved.</span>
+      <div class="flex items-center gap-4">
+        <a href="/privacy" class="hover:text-mwa-burgundy transition-colors">
+          Нууцлалын бодлого
+        </a>
+        <span aria-hidden="true">·</span>
+        <a href="/terms" class="hover:text-mwa-burgundy transition-colors">
+          Үйлчилгээний нөхцөл
+        </a>
+      </div>
+    </div>
+  </div>
+</footer>

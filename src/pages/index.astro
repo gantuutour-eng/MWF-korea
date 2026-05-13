@@ -5,12 +5,15 @@ import HeroCarousel from "../components/HeroCarousel.astro";
 import NewsCarousel from "../components/NewsCarousel.astro";
 import SectionTitle from "../components/SectionTitle.astro";
 import GridCard from "../components/GridCard.astro";
-import { listNews, listHeroSlides } from "../lib/db";
+import { listNews, listHeroSlides, listEvents } from "../lib/db";
+import { formatDate, formatTime } from "../lib/eventStyles";
+import { getYMD } from "../lib/datetime";
 
 const env = Astro.locals.runtime.env;
-const [latestNews, dbSlides] = await Promise.all([
-  listNews(env.DB, { limit: 6 }),
+const [latestNews, dbSlides, upcomingEvents] = await Promise.all([
+  listNews(env.DB, { limit: 7 }),
   listHeroSlides(env.DB),
+  listEvents(env.DB, { when: "upcoming" }),
 ]);
 
 const DEFAULT_HERO_SLIDES = [
@@ -72,66 +75,331 @@ const menu = [
     iconSrc: "/images/icons/about.png",
   },
 ];
+
+// ---------- Desktop-only data prep ----------
+const featuredNews = latestNews[0];
+const restNews = latestNews.slice(1, 7);
+const eventsForList = upcomingEvents.slice(0, 4);
+const mongolMonths = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12"];
+function eventDayParts(unix: number): { day: string; month: string } {
+  const p = getYMD(unix);
+  return { day: String(p.d).padStart(2, "0"), month: `${mongolMonths[p.m - 1]}сар` };
+}
+
+function leadParagraph(body: string): string {
+  const lines = body.split(/\n+/).filter(Boolean);
+  return lines[0]?.replace(/[#*>📌👇💬📅🎁🔹]/gu, "").trim() ?? "";
+}
 ---
 
 <AppLayout activeTab="home">
-  <HeroCarousel slides={heroSlides} />
+  {/* ════════════ MOBILE ════════════ */}
+  <div class="lg:hidden">
+    <HeroCarousel slides={heroSlides} />
 
-  <SectionTitle title="Үйл ажиллагаа" viewAllHref="/events" />
+    <SectionTitle title="Үйл ажиллагаа" viewAllHref="/events" />
 
-  <section class="px-5 lg:px-8 mb-8" data-purpose="menu-grid">
-    <div
-      class="grid grid-cols-3 lg:grid-cols-6 gap-x-4 gap-y-5 lg:max-w-4xl lg:mx-auto"
-    >
-      {
-        menu.map((item) => (
-          <GridCard
-            href={item.href}
-            label={item.label}
-            iconSrc={item.iconSrc}
-          />
-        ))
-      }
-    </div>
-  </section>
-
-  <NewsCarousel items={latestNews} />
-
-  <HeroBanner
-    variant="secondary"
-    title="Эмэгтэйчүүдийн эрх"
-    subtitle="Таны боломж, Таны ирээдүй"
-    href="/about"
-  />
-
-  <footer
-    class="px-5 lg:px-8 pt-8 pb-4 text-center"
-    data-purpose="home-footer"
-  >
-    <div class="text-[11px] text-gray-400 leading-relaxed">
-      <div class="font-bold text-mwa-burgundy/80 mb-1">
-        Монголын эмэгтэйчүүдийн холбоо
+    <section class="px-5 mb-8" data-purpose="menu-grid">
+      <div class="grid grid-cols-3 gap-x-4 gap-y-5">
+        {
+          menu.map((item) => (
+            <GridCard
+              href={item.href}
+              label={item.label}
+              iconSrc={item.iconSrc}
+            />
+          ))
+        }
       </div>
-      <div>БНСУ дахь салбар зөвлөл</div>
-    </div>
-    <nav
-      class="flex items-center justify-center gap-3 mt-4 text-[12px]"
-      aria-label="Хуудасны нөхцөлийн холбоосууд"
-    >
-      <a href="/privacy" class="text-gray-500 hover:text-mwa-burgundy">
-        Нууцлалын бодлого
+    </section>
+
+    <NewsCarousel items={latestNews} />
+
+    <HeroBanner
+      variant="secondary"
+      title="Эмэгтэйчүүдийн эрх"
+      subtitle="Таны боломж, Таны ирээдүй"
+      href="/about"
+    />
+
+    <footer class="px-5 pt-8 pb-4 text-center" data-purpose="home-footer">
+      <div class="text-[11px] text-gray-400 leading-relaxed">
+        <div class="font-bold text-mwa-burgundy/80 mb-1">
+          Монголын эмэгтэйчүүдийн холбоо
+        </div>
+        <div>БНСУ дахь салбар зөвлөл</div>
+      </div>
+      <nav
+        class="flex items-center justify-center gap-3 mt-4 text-[12px]"
+        aria-label="Хуудасны нөхцөлийн холбоосууд"
+      >
+        <a href="/privacy" class="text-gray-500 hover:text-mwa-burgundy">
+          Нууцлалын бодлого
+        </a>
+        <span class="text-gray-300">·</span>
+        <a href="/terms" class="text-gray-500 hover:text-mwa-burgundy">
+          Үйлчилгээний нөхцөл
+        </a>
+        <span class="text-gray-300">·</span>
+        <a href="/about" class="text-gray-500 hover:text-mwa-burgundy">
+          Бидний тухай
+        </a>
+      </nav>
+      <div class="text-[10px] text-gray-400 mt-3">
+        © 2026 MWA Korea. All rights reserved.
+      </div>
+    </footer>
+  </div>
+
+  {/* ════════════ DESKTOP (editorial magazine) ════════════ */}
+  <div class="hidden lg:block bg-mwa-cream">
+    {/* ---- Hero carousel (wide) ---- */}
+    <section class="px-12 pt-6 pb-10">
+      <HeroCarousel slides={heroSlides} />
+    </section>
+
+    {/* ---- Featured story + Upcoming events ---- */}
+    <section class="px-12 pb-16">
+      <div class="grid grid-cols-12 gap-8">
+        {/* Featured story (8 cols) */}
+        <article class="col-span-8 border-t border-mwa-ink/90 pt-6">
+          <div class="flex items-center justify-between mb-5">
+            <span class="ed-label">Онцлох мэдээ · Featured</span>
+            <a
+              href="/news"
+              class="text-[12px] font-bold text-mwa-burgundy hover:underline"
+            >
+              Бүгдийг харах ›
+            </a>
+          </div>
+
+          {featuredNews && (
+            <a
+              href={`/news/${featuredNews.id}`}
+              class="group block bg-white border border-mwa-ink/15 hover:border-mwa-ink/40 transition-colors"
+            >
+              <div class="aspect-[16/9] bg-mwa-cream overflow-hidden">
+                {featuredNews.cover_url ? (
+                  <img
+                    src={featuredNews.cover_url}
+                    alt=""
+                    class="w-full h-full object-cover group-hover:scale-[1.01] transition-transform duration-500"
+                  />
+                ) : (
+                  <div class="w-full h-full bg-gradient-to-br from-mwa-burgundy/10 to-mwa-burgundy/20" />
+                )}
+              </div>
+              <div class="p-7">
+                <div class="flex items-center gap-3 text-[11px] tracking-[0.18em] uppercase font-bold text-mwa-ink/70 mb-3">
+                  <span class="text-mwa-burgundy">FEATURED</span>
+                  <span class="text-mwa-ink/30">·</span>
+                  <span>{formatDate(featuredNews.published_at)}</span>
+                </div>
+                <h2 class="font-display text-3xl xl:text-4xl font-extrabold leading-[1.15] tracking-tight text-mwa-ink mb-3 group-hover:text-mwa-burgundy transition-colors">
+                  {featuredNews.title}
+                </h2>
+                {featuredNews.subtitle && (
+                  <p class="text-[15px] text-mwa-ink/70 leading-relaxed mb-4 line-clamp-3">
+                    {featuredNews.subtitle}
+                  </p>
+                )}
+                <div class="inline-flex items-center gap-1.5 text-[13px] font-bold text-mwa-burgundy border-b border-mwa-burgundy pb-0.5">
+                  Үргэлжлүүлэн унших <span aria-hidden="true">›</span>
+                </div>
+              </div>
+            </a>
+          )}
+        </article>
+
+        {/* Upcoming events sidebar (4 cols) */}
+        <aside class="col-span-4 border-t border-mwa-ink/90 pt-6">
+          <div class="flex items-center justify-between mb-5">
+            <span class="ed-label">Удахгүй болох</span>
+            <span class="text-[11px] font-mono text-mwa-ink/50">
+              {upcomingEvents.length}
+            </span>
+          </div>
+
+          {eventsForList.length === 0 ? (
+            <p class="text-[13px] text-mwa-ink/50">
+              Удахгүй болох арга хэмжээ алга байна.
+            </p>
+          ) : (
+            <ul class="divide-y divide-mwa-ink/15 border-b border-mwa-ink/15">
+              {eventsForList.map((e) => {
+                const d = eventDayParts(e.start_at);
+                return (
+                  <li>
+                    <a
+                      href={`/events/${e.id}`}
+                      class="group flex items-start gap-4 py-4 hover:text-mwa-burgundy transition-colors"
+                    >
+                      <div class="shrink-0 w-12 text-center leading-tight">
+                        <div class="font-display text-3xl font-extrabold text-mwa-burgundy">
+                          {d.day}
+                        </div>
+                        <div class="text-[10px] tracking-[0.15em] uppercase font-bold text-mwa-ink/60 mt-0.5">
+                          {d.month}
+                        </div>
+                      </div>
+                      <div class="flex-1 min-w-0 pt-0.5">
+                        <h3 class="font-bold text-[14px] leading-snug text-mwa-ink line-clamp-2 group-hover:text-mwa-burgundy">
+                          {e.title}
+                        </h3>
+                        {e.location && (
+                          <div class="text-[12px] text-mwa-ink/60 mt-1 truncate">
+                            📍 {e.location}
+                          </div>
+                        )}
+                        <div class="text-[11px] text-mwa-ink/50 mt-1 font-mono">
+                          {formatTime(e.start_at)}
+                        </div>
+                      </div>
+                    </a>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+
+          <a
+            href="/events"
+            class="inline-flex items-center gap-1 mt-5 text-[12px] font-bold text-mwa-burgundy hover:underline"
+          >
+            Календарь нээх <span aria-hidden="true">›</span>
+          </a>
+        </aside>
+      </div>
+    </section>
+
+    {/* ---- Category grid ---- */}
+    <section class="px-12 pb-16 bg-white">
+      <div class="border-t border-mwa-ink/90 pt-6">
+        <div class="flex items-center justify-between mb-7">
+          <span class="ed-label">Үйл ажиллагаа</span>
+          <a
+            href="/events"
+            class="text-[12px] font-bold text-mwa-burgundy hover:underline"
+          >
+            Бүгдийг харах ›
+          </a>
+        </div>
+
+        <div class="grid grid-cols-6 gap-6">
+          {
+            menu.map((item) => (
+              <a
+                href={item.href}
+                class="group flex flex-col items-center text-center"
+              >
+                <div class="w-full aspect-square bg-mwa-cream border border-mwa-ink/10 rounded-none flex items-center justify-center overflow-hidden group-hover:border-mwa-burgundy/40 transition-colors mb-3">
+                  <img
+                    src={item.iconSrc}
+                    alt=""
+                    loading="lazy"
+                    class="w-[55%] h-[55%] object-contain group-hover:scale-105 transition-transform"
+                  />
+                </div>
+                <span
+                  class="text-[13px] font-semibold leading-tight text-mwa-ink group-hover:text-mwa-burgundy transition-colors"
+                  set:html={item.label}
+                />
+              </a>
+            ))
+          }
+        </div>
+      </div>
+    </section>
+
+    {/* ---- Latest news magazine grid ---- */}
+    {restNews.length > 0 && (
+      <section class="px-12 py-16">
+        <div class="border-t border-mwa-ink/90 pt-6">
+          <div class="flex items-center justify-between mb-7">
+            <span class="ed-label">Сүүлийн мэдээ</span>
+            <a
+              href="/news"
+              class="text-[12px] font-bold text-mwa-burgundy hover:underline"
+            >
+              Бүгдийг харах ›
+            </a>
+          </div>
+
+          <div class="grid grid-cols-3 gap-8">
+            {restNews.slice(0, 3).map((row) => (
+              <a
+                href={`/news/${row.id}`}
+                class="group block bg-white border border-mwa-ink/15 hover:border-mwa-ink/40 transition-colors"
+              >
+                <div class="aspect-[4/3] bg-mwa-cream overflow-hidden">
+                  {row.cover_url ? (
+                    <img
+                      src={row.cover_url}
+                      alt=""
+                      loading="lazy"
+                      class="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-500"
+                    />
+                  ) : (
+                    <div class="w-full h-full bg-gradient-to-br from-mwa-burgundy/10 to-mwa-burgundy/20" />
+                  )}
+                </div>
+                <div class="p-5">
+                  <div class="flex items-center gap-2 text-[10px] tracking-[0.18em] uppercase font-bold text-mwa-ink/60 mb-2">
+                    <span class="text-mwa-burgundy">МЭДЭЭ</span>
+                    <span class="text-mwa-ink/30">·</span>
+                    <span>{formatDate(row.published_at)}</span>
+                  </div>
+                  <h3 class="font-display text-xl font-extrabold leading-snug text-mwa-ink mb-2 group-hover:text-mwa-burgundy transition-colors line-clamp-2">
+                    {row.title}
+                  </h3>
+                  <p class="text-[13px] text-mwa-ink/70 leading-relaxed line-clamp-3">
+                    {row.subtitle ?? leadParagraph(row.body)}
+                  </p>
+                </div>
+              </a>
+            ))}
+          </div>
+        </div>
+      </section>
+    )}
+
+    {/* ---- Membership CTA banner ---- */}
+    <section class="px-12 pb-16">
+      <a
+        href="/membership"
+        class="block bg-mwa-burgundy text-white px-10 py-12 relative overflow-hidden group"
+      >
+        <div class="relative z-10 flex items-end justify-between gap-8">
+          <div class="max-w-2xl">
+            <div class="ed-label text-white/80 mb-3">
+              <span class="text-white/90">Гишүүнчлэл</span>
+            </div>
+            <h2 class="font-display text-4xl xl:text-5xl font-extrabold leading-[1.1] tracking-tight mb-3">
+              Эмэгтэйчүүдийн эрх
+            </h2>
+            <p class="text-lg opacity-90 font-light">
+              Таны боломж · Таны ирээдүй
+            </p>
+          </div>
+          <div class="flex items-center gap-3 shrink-0">
+            <span class="border-b border-white pb-0.5 text-sm font-bold">
+              Гишүүн болох
+            </span>
+            <span class="text-2xl" aria-hidden="true">›</span>
+          </div>
+        </div>
+        <img
+          src="/images/logo.png"
+          alt=""
+          class="absolute right-[-40px] top-1/2 -translate-y-1/2 w-64 h-64 object-contain opacity-15 pointer-events-none"
+        />
       </a>
-      <span class="text-gray-300">·</span>
-      <a href="/terms" class="text-gray-500 hover:text-mwa-burgundy">
-        Үйлчилгээний нөхцөл
-      </a>
-      <span class="text-gray-300">·</span>
-      <a href="/about" class="text-gray-500 hover:text-mwa-burgundy">
-        Бидний тухай
-      </a>
-    </nav>
-    <div class="text-[10px] text-gray-400 mt-3">
-      © 2026 MWA Korea. All rights reserved.
-    </div>
-  </footer>
+    </section>
+  </div>
 </AppLayout>
+
+<style>
+  .font-display {
+    font-family: var(--font-display);
+  }
+</style>
