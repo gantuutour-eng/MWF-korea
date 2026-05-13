@@ -1,53 +1,410 @@
 ---
 import AppLayout from "../layouts/AppLayout.astro";
+
+const principles = [
+  { label: "Эрх", desc: "Эрх ашгийг хамгаалах" },
+  { label: "Оролцоо", desc: "Нийгмийн оролцоо" },
+  { label: "Хөгжил", desc: "Хувь хүний хөгжил" },
+];
+
+const timeline = [
+  {
+    year: "1924",
+    title: "Үндэс байгуулагдсан",
+    desc: "МЭХ үүсгэн байгуулагдав",
+  },
+  {
+    year: "1991",
+    title: "Шинэ үе",
+    desc: "Ардчилсан өөрчлөлтөөс хойш шинэчлэлийн үе",
+  },
+  {
+    year: "2008",
+    title: "БНСУ салбар",
+    desc: "Сөүл хотноо анхны салбар нээгдсэн",
+  },
+  {
+    year: "2018",
+    title: "Цахим шинэчлэл",
+    desc: "Гишүүнчлэлийг онлайн руу шилжүүлэв",
+  },
+  {
+    year: "2024",
+    title: "100 жилийн ой",
+    desc: "Холбооны зуун жилийн түүхээ тэмдэглэв",
+  },
+];
+
+const values = [
+  { num: "01", icon: "🤝", title: "Эв нэгдэл", desc: "Харилцан хүндэтгэл" },
+  { num: "02", icon: "📋", title: "Хариуцлага", desc: "Ил тод байдал" },
+  { num: "03", icon: "✨", title: "Хөгжил", desc: "Шинэчлэл" },
+  { num: "04", icon: "⚖︎", title: "Эрх тэгш", desc: "Боломжтой нийгэм" },
+];
+
+const stats = [
+  { value: "100+", label: "Жилийн түүх" },
+  { value: "12", label: "Дэд зөвлөл" },
+  { value: "800+", label: "Идэвхтэй гишүүн" },
+  { value: "40+", label: "Жилийн арга хэмжээ" },
+];
+
+const leadership = [
+  {
+    initials: "BO",
+    name: "Б. Оюунгэрэл",
+    role: "Ерөнхийлөгч",
+    note: "2024 — өнөөг хүртэл",
+  },
+  {
+    initials: "TB",
+    name: "Ц. Болормаа",
+    role: "Дэд ерөнхийлөгч",
+    note: "Боловсрол · Соёл",
+  },
+  {
+    initials: "DE",
+    name: "Д. Энхтуяа",
+    role: "Гүйцэтгэх захирал",
+    note: "Үйл ажиллагаа",
+  },
+];
 ---
 
 <AppLayout title="Бидний тухай">
-  <div data-pc-wrapper class="lg:max-w-3xl lg:mx-auto lg:px-8 lg:py-6">
-  <section class="px-5 pb-4">
-    <h1 class="text-2xl font-bold mb-1">Бидний тухай</h1>
-    <p class="text-sm text-mwa-text-secondary">1924 оноос эхтэй түүхтэй</p>
-  </section>
+  {/* ════════════ MOBILE ════════════ */}
+  <div class="lg:hidden">
+    <section class="px-5 pt-4 pb-4">
+      <h1 class="text-2xl font-bold mb-1">Бидний тухай</h1>
+      <p class="text-sm text-mwa-text-secondary">1924 оноос эхтэй түүхтэй</p>
+    </section>
 
-  <section class="px-5 mb-6">
-    <div
-      class="bg-mwa-burgundy text-white rounded-[24px] p-6 relative overflow-hidden"
-    >
-      <h2 class="font-bold text-lg mb-2">Эрхэм зорилго</h2>
-      <p class="text-sm opacity-90">
-        Солонгост амьдарч буй монгол эмэгтэйчүүдийн эрх, ашиг сонирхлыг
-        хамгаалж, тэдний нийгмийн оролцоо, хөгжлийг дэмжих.
-      </p>
-    </div>
-  </section>
+    <section class="px-5 mb-6">
+      <div
+        class="bg-mwa-burgundy text-white rounded-[24px] p-6 relative overflow-hidden"
+      >
+        <h2 class="font-bold text-lg mb-2">Эрхэм зорилго</h2>
+        <p class="text-sm opacity-90">
+          Солонгост амьдарч буй монгол эмэгтэйчүүдийн эрх, ашиг сонирхлыг
+          хамгаалж, тэдний нийгмийн оролцоо, хөгжлийг дэмжих.
+        </p>
+      </div>
+    </section>
 
-  <section class="px-5 space-y-3">
-    <div class="bg-white border border-gray-100 rounded-2xl shadow-sm p-5">
-      <h2 class="font-bold text-base mb-2">Түүх</h2>
-      <p class="text-sm text-mwa-text-secondary">
-        1924 онд анх үүсгэн байгуулагдсан Монголын эмэгтэйчүүдийн холбооны БНСУ
-        дахь салбар зөвлөл нь Солонгост амьдарч буй монгол эмэгтэйчүүдийг
-        нэгтгэх, тэдний дуу хоолой болох зорилгоор ажилладаг.
-      </p>
-    </div>
+    <section class="px-5 space-y-3">
+      <div class="bg-white border border-gray-100 rounded-2xl shadow-sm p-5">
+        <h2 class="font-bold text-base mb-2">Түүх</h2>
+        <p class="text-sm text-mwa-text-secondary">
+          1924 онд анх үүсгэн байгуулагдсан Монголын эмэгтэйчүүдийн холбооны
+          БНСУ дахь салбар зөвлөл нь Солонгост амьдарч буй монгол
+          эмэгтэйчүүдийг нэгтгэх, тэдний дуу хоолой болох зорилгоор ажилладаг.
+        </p>
+      </div>
 
-    <div class="bg-white border border-gray-100 rounded-2xl shadow-sm p-5">
-      <h2 class="font-bold text-base mb-2">Үнэт зүйлс</h2>
-      <ul class="text-sm text-mwa-text-secondary space-y-1">
-        <li>• Эв нэгдэл, харилцан хүндэтгэл</li>
-        <li>• Хариуцлага, ил тод байдал</li>
-        <li>• Хөгжил, шинэчлэл</li>
-        <li>• Эрх тэгш байдал</li>
-      </ul>
-    </div>
+      <div class="bg-white border border-gray-100 rounded-2xl shadow-sm p-5">
+        <h2 class="font-bold text-base mb-2">Үнэт зүйлс</h2>
+        <ul class="text-sm text-mwa-text-secondary space-y-1">
+          <li>• Эв нэгдэл, харилцан хүндэтгэл</li>
+          <li>• Хариуцлага, ил тод байдал</li>
+          <li>• Хөгжил, шинэчлэл</li>
+          <li>• Эрх тэгш байдал</li>
+        </ul>
+      </div>
 
-    <div class="bg-white border border-gray-100 rounded-2xl shadow-sm p-5">
-      <h2 class="font-bold text-base mb-2">Холбоо барих</h2>
-      <p class="text-sm text-mwa-text-secondary">
-        <strong>Имэйл:</strong> contact@mwa-korea.org<br />
-        <strong>Сошиал:</strong> @mwa.korea
-      </p>
-    </div>
-  </section>
+      <div class="bg-white border border-gray-100 rounded-2xl shadow-sm p-5">
+        <h2 class="font-bold text-base mb-2">Холбоо барих</h2>
+        <p class="text-sm text-mwa-text-secondary">
+          <strong>Имэйл:</strong> manuhad.mwa@gmail.com<br />
+          <strong>Сошиал:</strong> @mwa.korea
+        </p>
+      </div>
+    </section>
+  </div>
+
+  {/* ════════════ DESKTOP (editorial story) ════════════ */}
+  <div class="hidden lg:block bg-mwa-cream">
+    {/* ---- Hero header ---- */}
+    <section class="px-12 pt-12 pb-10">
+      <div class="border-t border-mwa-ink/90 pt-6 max-w-5xl">
+        <span class="ed-label mb-5 inline-flex">
+          БНСУ дахь салбар зөвлөл · since 1924
+        </span>
+        <h1 class="text-5xl xl:text-6xl font-extrabold leading-[1.05] tracking-tight text-mwa-ink mb-5 mt-4">
+          Бидний тухай
+        </h1>
+        <p class="text-lg text-mwa-ink/70 leading-relaxed max-w-3xl">
+          Солонгост амьдрах монгол эмэгтэйчүүдийг нэгтгэж, дуу хоолой нь болж,
+          ирээдүйг хамтдаа бүтээж байна.
+        </p>
+        <nav class="mt-6 text-[12px] tracking-wide text-mwa-ink/50">
+          <a href="/" class="hover:text-mwa-burgundy">Нүүр</a>
+          <span class="mx-2" aria-hidden="true">›</span>
+          <span class="text-mwa-ink">Бидний тухай</span>
+        </nav>
+      </div>
+    </section>
+
+    {/* ---- Hero image / founding plate ---- */}
+    <section class="px-12 pb-16">
+      <div class="relative bg-mwa-burgundy text-white aspect-[16/7] overflow-hidden">
+        <img
+          src="/images/about-founding.jpg"
+          alt=""
+          class="absolute inset-0 w-full h-full object-cover opacity-60"
+          onerror="this.style.display='none'"
+        />
+        <div class="absolute inset-0 bg-gradient-to-t from-mwa-burgundy/80 via-mwa-burgundy/30 to-transparent" />
+        <div class="absolute top-8 left-8 flex items-baseline gap-4">
+          <span class="text-6xl xl:text-7xl font-extrabold leading-none tracking-tight">
+            1924
+          </span>
+          <span class="ed-label !text-white/90 [&::before]:bg-white/70">
+            100 жилийн ой
+          </span>
+        </div>
+        <div class="absolute bottom-8 left-8 right-8 text-[12px] uppercase tracking-[0.2em] font-bold text-white/70">
+          founding council · since 1924
+        </div>
+      </div>
+    </section>
+
+    {/* ---- Mission + Principles ---- */}
+    <section class="px-12 pb-20 bg-white">
+      <div class="border-t border-mwa-ink/90 pt-6">
+        <div class="grid grid-cols-12 gap-8 mb-10">
+          <div class="col-span-1">
+            <span class="ed-label">MISSION</span>
+          </div>
+          <div class="col-span-11">
+            <h2 class="text-3xl xl:text-4xl font-extrabold leading-tight tracking-tight text-mwa-ink mb-5">
+              Эрхэм зорилго
+            </h2>
+            <p class="text-lg text-mwa-ink/75 leading-relaxed max-w-3xl">
+              Солонгост амьдарч буй монгол эмэгтэйчүүдийн эрх, ашиг сонирхлыг
+              хамгаалж, тэдний нийгмийн оролцоо, хөгжлийг дэмжих.
+            </p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-6">
+          {
+            principles.map((p) => (
+              <div class="border border-mwa-ink/15 bg-mwa-cream p-7">
+                <span class="ed-label mb-4 inline-flex">PRINCIPLE</span>
+                <div class="text-3xl font-extrabold tracking-tight text-mwa-ink mt-3">
+                  {p.label}
+                </div>
+                <p class="text-[13px] text-mwa-ink/70 mt-2">{p.desc}</p>
+              </div>
+            ))
+          }
+        </div>
+      </div>
+    </section>
+
+    {/* ---- Timeline ---- */}
+    <section class="px-12 py-20">
+      <div class="border-t border-mwa-ink/90 pt-6">
+        <div class="flex items-center justify-between mb-10">
+          <span class="ed-label">Түүх · 1924 → өнөөдөр</span>
+          <span class="text-[12px] font-mono text-mwa-ink/50">
+            {timeline.length} milestones
+          </span>
+        </div>
+
+        <ol class="grid grid-cols-5 gap-0 border-l border-mwa-ink/20">
+          {
+            timeline.map((m, i) => (
+              <li
+                class={`relative px-5 py-6 border-r border-mwa-ink/20 ${
+                  i === timeline.length - 1 ? "bg-mwa-burgundy/5" : "bg-white"
+                }`}
+              >
+                <div class="absolute -top-[5px] left-5 w-2.5 h-2.5 bg-mwa-burgundy rounded-full" />
+                <div class="text-4xl font-extrabold leading-none tracking-tight text-mwa-burgundy mb-3 mt-1">
+                  {m.year}
+                </div>
+                <div class="font-bold text-sm text-mwa-ink mb-1.5">
+                  {m.title}
+                </div>
+                <p class="text-[12px] text-mwa-ink/65 leading-relaxed">
+                  {m.desc}
+                </p>
+              </li>
+            ))
+          }
+        </ol>
+      </div>
+    </section>
+
+    {/* ---- Values + Stats ---- */}
+    <section class="px-12 pb-20 bg-white">
+      <div class="border-t border-mwa-ink/90 pt-6">
+        <div class="flex items-center justify-between mb-10">
+          <span class="ed-label">Үнэт зүйлс</span>
+          <a
+            href="/portfolio"
+            class="text-[12px] font-bold text-mwa-burgundy hover:underline"
+          >
+            Илүү унших ›
+          </a>
+        </div>
+
+        <div class="grid grid-cols-4 gap-6 mb-12">
+          {
+            values.map((v) => (
+              <article class="border border-mwa-ink/15 bg-mwa-cream p-6 group hover:border-mwa-burgundy/40 transition-colors">
+                <div class="flex items-center justify-between mb-5">
+                  <span class="text-2xl">{v.icon}</span>
+                  <span class="text-[11px] font-mono text-mwa-ink/40">
+                    {v.num}
+                  </span>
+                </div>
+                <h3 class="font-extrabold text-lg text-mwa-ink mb-1 tracking-tight">
+                  {v.title}
+                </h3>
+                <p class="text-[13px] text-mwa-ink/70">{v.desc}</p>
+              </article>
+            ))
+          }
+        </div>
+
+        <div class="grid grid-cols-4 gap-0 border-t border-b border-mwa-ink/20">
+          {
+            stats.map((s) => (
+              <div class="text-center py-7 border-r last:border-r-0 border-mwa-ink/15">
+                <div class="text-4xl xl:text-5xl font-extrabold tracking-tight text-mwa-burgundy mb-1.5">
+                  {s.value}
+                </div>
+                <div class="text-[11px] tracking-[0.2em] uppercase font-bold text-mwa-ink/60">
+                  {s.label}
+                </div>
+              </div>
+            ))
+          }
+        </div>
+      </div>
+    </section>
+
+    {/* ---- Leadership ---- */}
+    <section class="px-12 py-20">
+      <div class="border-t border-mwa-ink/90 pt-6">
+        <div class="flex items-center justify-between mb-10">
+          <span class="ed-label">Удирдлага · Зөвлөл</span>
+          <a
+            href="/portfolio"
+            class="text-[12px] font-bold text-mwa-burgundy hover:underline"
+          >
+            Бүх гишүүд ›
+          </a>
+        </div>
+
+        <div class="grid grid-cols-3 gap-8">
+          {
+            leadership.map((p) => (
+              <article class="bg-white border border-mwa-ink/15">
+                <div class="aspect-[4/5] bg-mwa-cream flex items-center justify-center">
+                  <span class="text-6xl font-extrabold tracking-tight text-mwa-ink/15">
+                    {p.initials}
+                  </span>
+                </div>
+                <div class="p-6 border-t border-mwa-ink/15">
+                  <h3 class="font-extrabold text-xl tracking-tight text-mwa-ink mb-1">
+                    {p.name}
+                  </h3>
+                  <div class="text-[13px] font-semibold text-mwa-burgundy mb-1.5">
+                    {p.role}
+                  </div>
+                  <div class="text-[12px] text-mwa-ink/60 mb-4">{p.note}</div>
+                  <div class="flex items-center gap-3 text-[12px] text-mwa-ink/60 pt-3 border-t border-mwa-ink/10">
+                    <span class="font-bold">in</span>
+                    <span class="font-bold">@</span>
+                    <a href="#" class="ml-auto font-bold text-mwa-burgundy">
+                      Profile ›
+                    </a>
+                  </div>
+                </div>
+              </article>
+            ))
+          }
+        </div>
+      </div>
+    </section>
+
+    {/* ---- Contact ---- */}
+    <section class="px-12 pb-24 bg-white">
+      <div class="border-t border-mwa-ink/90 pt-6">
+        <div class="grid grid-cols-12 gap-10 items-start">
+          <div class="col-span-5">
+            <span class="ed-label">Холбоо барих</span>
+            <h2 class="text-3xl xl:text-4xl font-extrabold leading-tight tracking-tight text-mwa-ink mt-5 mb-8">
+              Бид танд хүрэхэд бэлэн
+            </h2>
+
+            <dl class="space-y-5 mb-8">
+              <div class="border-t border-mwa-ink/15 pt-4">
+                <dt class="text-[11px] tracking-[0.2em] uppercase font-bold text-mwa-ink/50 mb-1">
+                  Email
+                </dt>
+                <dd>
+                  <a
+                    href="mailto:manuhad.mwa@gmail.com"
+                    class="text-base font-semibold text-mwa-ink hover:text-mwa-burgundy"
+                  >
+                    manuhad.mwa@gmail.com
+                  </a>
+                </dd>
+              </div>
+              <div class="border-t border-mwa-ink/15 pt-4">
+                <dt class="text-[11px] tracking-[0.2em] uppercase font-bold text-mwa-ink/50 mb-1">
+                  Social
+                </dt>
+                <dd class="text-base font-semibold text-mwa-ink">
+                  @mwa.korea
+                </dd>
+              </div>
+              <div class="border-t border-mwa-ink/15 pt-4">
+                <dt class="text-[11px] tracking-[0.2em] uppercase font-bold text-mwa-ink/50 mb-1">
+                  Office
+                </dt>
+                <dd class="text-base text-mwa-ink">
+                  Сөүл хот · ЦТҮ-3 байр
+                </dd>
+              </div>
+              <div class="border-t border-mwa-ink/15 pt-4">
+                <dt class="text-[11px] tracking-[0.2em] uppercase font-bold text-mwa-ink/50 mb-1">
+                  Hours
+                </dt>
+                <dd class="text-base text-mwa-ink">Да-Бя 10:00–18:00</dd>
+              </div>
+            </dl>
+
+            <div class="flex items-center gap-3">
+              <a
+                href="mailto:manuhad.mwa@gmail.com"
+                class="inline-flex items-center gap-2 bg-mwa-burgundy text-white px-6 py-3 text-sm font-bold hover:opacity-90"
+              >
+                Имэйл илгээх <span aria-hidden="true">›</span>
+              </a>
+              <a
+                href="/chat"
+                class="inline-flex items-center gap-2 border border-mwa-ink text-mwa-ink px-6 py-3 text-sm font-bold hover:bg-mwa-ink hover:text-white transition-colors"
+              >
+                Чат нээх
+              </a>
+            </div>
+          </div>
+
+          <div class="col-span-7 bg-mwa-cream border border-mwa-ink/15 aspect-[4/3] flex items-center justify-center">
+            <div class="text-center">
+              <div class="text-5xl mb-3" aria-hidden="true">🗺</div>
+              <div class="text-[11px] tracking-[0.2em] uppercase font-bold text-mwa-ink/50">
+                Seoul HQ · map
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
   </div>
 </AppLayout>
