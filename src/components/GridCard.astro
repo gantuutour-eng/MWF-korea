@@ -9,15 +9,15 @@ interface Props {
 const { href, label, iconSrc, iconAlt = "" } = Astro.props;
 ---
 
-<a href={href} class="grid-card flex flex-col items-center text-center">
+<a href={href} class="grid-card flex flex-col items-center text-center group">
   <div
-    class="grid-tile w-full aspect-square bg-gray-100 rounded-[22px] flex items-center justify-center mb-2 overflow-hidden"
+    class="grid-tile w-full aspect-square bg-gray-100 rounded-[22px] flex items-center justify-center mb-2 overflow-hidden transition group-hover:bg-mwa-burgundy/10"
   >
     <img
       src={iconSrc}
       alt={iconAlt}
       loading="lazy"
-      class="w-3/5 h-3/5 object-contain"
+      class="w-3/5 h-3/5 lg:w-[70%] lg:h-[70%] object-contain transition group-hover:scale-105"
     />
   </div>
   <span
