@@ -113,13 +113,15 @@ const toneStyles: Record<NonNullable<Review["tone"]>, { avatar: string; accent: 
     class="marquee-viewport relative overflow-hidden lg:px-12"
     aria-label="Гишүүдийн сэтгэгдэл"
   >
-    {/* Soft edge fade (desktop) so cards drift in/out smoothly */}
+    {/* Soft edge fade (desktop) so cards drift in/out smoothly.
+        Width matches a full card so a card is fully faded before the
+        viewport clips it. */}
     <div
-      class="hidden lg:block absolute left-12 top-0 bottom-0 w-16 bg-gradient-to-r from-mwa-cream to-transparent pointer-events-none z-10"
+      class="hidden lg:block absolute left-0 top-0 bottom-0 w-[360px] bg-gradient-to-r from-mwa-cream via-mwa-cream/95 to-transparent pointer-events-none z-10"
     >
     </div>
     <div
-      class="hidden lg:block absolute right-12 top-0 bottom-0 w-16 bg-gradient-to-l from-mwa-cream to-transparent pointer-events-none z-10"
+      class="hidden lg:block absolute right-0 top-0 bottom-0 w-[360px] bg-gradient-to-l from-mwa-cream via-mwa-cream/95 to-transparent pointer-events-none z-10"
     >
     </div>
 
