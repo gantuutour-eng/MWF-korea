@@ -3,6 +3,7 @@ import AppLayout from "../../layouts/AppLayout.astro";
 import { loadCurrentUser } from "../../lib/auth";
 import { getActiveMembership } from "../../lib/db";
 import { getPlan } from "../../lib/membership";
+import { formatDate as fmt } from "../../lib/datetime";
 
 const env = Astro.locals.runtime.env;
 const user = await loadCurrentUser(
@@ -11,27 +12,16 @@ const user = await loadCurrentUser(
   Astro.request.headers.get("cookie"),
 );
 
-// Dev mode: show demo profile if not logged in so the page is browsable without auth.
-const profile = user ?? {
-  id: 123,
-  name: "Б. Энхжаргал",
-  email: null,
-  avatar_url: null,
-  role: "member" as const,
-};
+const memberNumber = user ? `MG1924-${String(user.id).padStart(6, "0")}` : "";
 
-const memberNumber = `MG1924-${String(profile.id).padStart(6, "0")}`;
-
-// Membership status — fetched for logged-in users, faked for the dev demo.
+// Membership status — only resolved for logged-in users now. Previously
+// the page rendered a hardcoded "Б. Энхжаргал" demo profile for visitors,
+// which was confusing once the site went live.
 type MembershipBar = {
   planLabel: string;
   startLabel: string;
   endLabel: string;
   daysRemaining: number;
-};
-const fmt = (unix: number) => {
-  const d = new Date(unix * 1000);
-  return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getDate()).padStart(2, "0")}`;
 };
 const now = Math.floor(Date.now() / 1000);
 let membership: MembershipBar | null = null;
@@ -46,17 +36,6 @@ if (user) {
       daysRemaining: Math.max(0, Math.ceil((row.ends_at - now) / 86400)),
     };
   }
-} else {
-  // Demo: pretend the demo user is mid-way through a 6-month plan.
-  const sixMo = 86400 * 30 * 6;
-  const startUnix = now - sixMo / 2;
-  const endUnix = now + sixMo / 2;
-  membership = {
-    planLabel: "6 сарын эрх",
-    startLabel: fmt(startUnix),
-    endLabel: fmt(endUnix),
-    daysRemaining: Math.ceil((endUnix - now) / 86400),
-  };
 }
 
 interface MenuItem {
@@ -117,39 +96,119 @@ const menu: MenuItem[] = [
     <div class="w-10"></div>
   </header>
 
-  <section class="text-center pt-2 pb-5" data-purpose="profile-identity">
-    <div
-      class="w-28 h-28 rounded-full overflow-hidden bg-gray-100 mx-auto border border-gray-100"
-    >
-      <img
-        src={profile.avatar_url ?? "/images/avatar-placeholder.svg"}
-        alt=""
-        class="w-full h-full object-cover"
-      />
-    </div>
-    <div class="text-mwa-burgundy font-extrabold text-xl mt-3">
-      {profile.name}
-    </div>
-  </section>
+  {
+    user ? (
+      <>
+        <section class="text-center pt-2 pb-5" data-purpose="profile-identity">
+          <div class="w-28 h-28 rounded-full overflow-hidden bg-gray-100 mx-auto border border-gray-100">
+            <img
+              src={user.avatar_url ?? "/images/avatar-placeholder.svg"}
+              alt=""
+              class="w-full h-full object-cover"
+            />
+          </div>
+          <div class="text-mwa-burgundy font-extrabold text-xl mt-3">
+            {user.name}
+          </div>
+          {user.email && (
+            <div class="text-xs text-mwa-text-secondary mt-1">{user.email}</div>
+          )}
+        </section>
 
-  <section class="px-5 mb-6" data-purpose="profile-membership">
-    {
-      membership ? (
-        <div class="bg-mwa-burgundy text-white rounded-2xl overflow-hidden shadow-md">
-          <a
-            href="/profile/membership"
-            class="block p-4 active:bg-mwa-burgundy/90 transition-colors"
-          >
-            <div class="flex items-center gap-2 mb-2.5">
-              <span class="inline-block w-2 h-2 rounded-full bg-emerald-300" />
-              <span class="text-[11px] font-bold uppercase tracking-wider">
-                Идэвхтэй гишүүн
-              </span>
-              <span class="text-xs font-semibold opacity-90">
-                · {membership.planLabel}
-              </span>
+        <section class="px-5 mb-6" data-purpose="profile-membership">
+          {membership ? (
+            <div class="bg-mwa-burgundy text-white rounded-2xl overflow-hidden shadow-md">
+              <a
+                href="/profile/membership"
+                class="block p-4 active:bg-mwa-burgundy/90 transition-colors"
+              >
+                <div class="flex items-center gap-2 mb-2.5">
+                  <span class="inline-block w-2 h-2 rounded-full bg-emerald-300" />
+                  <span class="text-[11px] font-bold uppercase tracking-wider">
+                    Идэвхтэй гишүүн
+                  </span>
+                  <span class="text-xs font-semibold opacity-90">
+                    · {membership.planLabel}
+                  </span>
+                  <svg
+                    class="w-4 h-4 opacity-70 ml-auto"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      d="M9 5l7 7-7 7"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                    />
+                  </svg>
+                </div>
+                <div class="font-extrabold text-sm leading-tight mb-1">
+                  {membership.startLabel}
+                  <span class="opacity-70 mx-1">→</span>
+                  {membership.endLabel}
+                </div>
+                <div class="text-[11px] opacity-85 flex items-center gap-1.5">
+                  <span class="font-mono opacity-90">{memberNumber}</span>
+                  <span class="opacity-50">·</span>
+                  <span>
+                    Үлдсэн{" "}
+                    <strong class="font-extrabold">
+                      {membership.daysRemaining}
+                    </strong>{" "}
+                    өдөр
+                  </span>
+                </div>
+              </a>
+              <a
+                href="/membership"
+                class="block text-center bg-white/15 hover:bg-white/25 py-3 text-xs font-bold active:opacity-80 transition-colors border-t border-white/10"
+              >
+                Эрх сунгах →
+              </a>
+            </div>
+          ) : (
+            <div class="bg-gradient-to-r from-mwa-burgundy/5 to-purple-100/60 border border-mwa-burgundy/20 rounded-2xl p-4 flex items-center justify-between gap-3">
+              <div class="min-w-0">
+                <div class="text-[11px] font-bold text-mwa-burgundy uppercase tracking-wider mb-0.5">
+                  Гишүүнчлэлгүй
+                </div>
+                <div class="text-xs text-mwa-text-secondary">
+                  Бүх боломжийг ашиглахын тулд гишүүн болоорой
+                </div>
+              </div>
+              <a
+                href="/membership"
+                class="bg-mwa-burgundy text-white text-xs font-bold rounded-lg px-4 py-2.5 shrink-0 active:opacity-80 whitespace-nowrap"
+              >
+                Эрх авах
+              </a>
+            </div>
+          )}
+        </section>
+
+        <section
+          class="px-5 divide-y divide-gray-100 border-y border-gray-100"
+          data-purpose="profile-menu"
+        >
+          {menu.map((item) => (
+            <a
+              href={item.href}
+              class="flex items-center justify-between py-4 active:bg-gray-50"
+            >
+              <div class="flex items-center gap-3">
+                <svg
+                  class="w-5 h-5 text-mwa-text-secondary"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  set:html={item.icon}
+                />
+                <span class="text-sm text-mwa-text-primary">{item.label}</span>
+              </div>
               <svg
-                class="w-4 h-4 opacity-70 ml-auto"
+                class="w-4 h-4 text-gray-300"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -161,181 +220,153 @@ const menu: MenuItem[] = [
                   stroke-width="2"
                 />
               </svg>
-            </div>
-            <div class="font-extrabold text-sm leading-tight mb-1">
-              {membership.startLabel}
-              <span class="opacity-70 mx-1">→</span>
-              {membership.endLabel}
-            </div>
-            <div class="text-[11px] opacity-85 flex items-center gap-1.5">
-              <span class="font-mono opacity-90">{memberNumber}</span>
-              <span class="opacity-50">·</span>
-              <span>
-                Үлдсэн{" "}
-                <strong class="font-extrabold">
-                  {membership.daysRemaining}
-                </strong>{" "}
-                өдөр
-              </span>
-            </div>
-          </a>
-          <a
-            href="/membership"
-            class="block text-center bg-white/15 hover:bg-white/25 py-3 text-xs font-bold active:opacity-80 transition-colors border-t border-white/10"
-          >
-            Эрх сунгах →
-          </a>
-        </div>
-      ) : (
-        <div class="bg-gradient-to-r from-mwa-burgundy/5 to-purple-100/60 border border-mwa-burgundy/20 rounded-2xl p-4 flex items-center justify-between gap-3">
-          <div class="min-w-0">
-            <div class="text-[11px] font-bold text-mwa-burgundy uppercase tracking-wider mb-0.5">
-              Гишүүнчлэлгүй
-            </div>
-            <div class="text-xs text-mwa-text-secondary">
-              Бүх боломжийг ашиглахын тулд гишүүн болоорой
-            </div>
-          </div>
-          <a
-            href="/membership"
-            class="bg-mwa-burgundy text-white text-xs font-bold rounded-lg px-4 py-2.5 shrink-0 active:opacity-80 whitespace-nowrap"
-          >
-            Эрх авах
-          </a>
-        </div>
-      )
-    }
-  </section>
+            </a>
+          ))}
+        </section>
 
-  <section
-    class="px-5 divide-y divide-gray-100 border-y border-gray-100"
-    data-purpose="profile-menu"
-  >
-    {
-      menu.map((item) => (
-        <a
-          href={item.href}
-          class="flex items-center justify-between py-4 active:bg-gray-50"
-        >
-          <div class="flex items-center gap-3">
-            <svg
-              class="w-5 h-5 text-mwa-text-secondary"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              set:html={item.icon}
-            />
-            <span class="text-sm text-mwa-text-primary">{item.label}</span>
-          </div>
-          <svg
-            class="w-4 h-4 text-gray-300"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              d="M9 5l7 7-7 7"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-            />
-          </svg>
-        </a>
-      ))
-    }
-  </section>
+        {user.role === "admin" && (
+          <section class="px-5 mt-4" data-purpose="profile-admin">
+            <a
+              href="/admin"
+              class="flex items-center gap-3 bg-mwa-burgundy text-white rounded-2xl p-4 shadow-sm active:opacity-90"
+            >
+              <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+                <svg
+                  class="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                  />
+                </svg>
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="font-bold text-sm">Админ панель</div>
+                <div class="text-[11px] opacity-80">
+                  Чат, төлбөр, мэдээ, хөтөлбөрүүдийг удирдах
+                </div>
+              </div>
+              <svg
+                class="w-4 h-4 opacity-80"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  d="M9 5l7 7-7 7"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                />
+              </svg>
+            </a>
+          </section>
+        )}
 
-  {
-    user?.role === "admin" && (
-      <section class="px-5 mt-4" data-purpose="profile-admin">
-        <a
-          href="/admin"
-          class="flex items-center gap-3 bg-mwa-burgundy text-white rounded-2xl p-4 shadow-sm active:opacity-90"
-        >
-          <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center shrink-0">
+        <section class="px-5 mt-3 mb-10" data-purpose="profile-logout">
+          <form method="POST" action="/api/auth/logout">
+            <button
+              type="submit"
+              class="w-full flex items-center gap-3 py-4 active:bg-gray-50 text-left"
+            >
+              <svg
+                class="w-5 h-5 text-mwa-text-secondary"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                />
+              </svg>
+              <span class="text-sm text-mwa-text-primary">Гарах</span>
+            </button>
+          </form>
+        </section>
+      </>
+    ) : (
+      <section
+        class="px-5 pt-2 pb-10"
+        data-purpose="profile-guest"
+      >
+        <div class="text-center pt-4 pb-8">
+          <div class="w-24 h-24 rounded-full bg-mwa-burgundy/10 mx-auto flex items-center justify-center">
             <svg
-              class="w-5 h-5"
+              class="w-10 h-10 text-mwa-burgundy/60"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
             >
               <path
-                d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                 stroke-linecap="round"
                 stroke-linejoin="round"
                 stroke-width="2"
               />
             </svg>
           </div>
-          <div class="flex-1 min-w-0">
-            <div class="font-bold text-sm">Админ панель</div>
-            <div class="text-[11px] opacity-80">
-              Чат, төлбөр, мэдээ, хөтөлбөрүүдийг удирдах
-            </div>
-          </div>
-          <svg
-            class="w-4 h-4 opacity-80"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+          <h2 class="text-mwa-burgundy font-extrabold text-lg mt-4">
+            Та нэвтрээгүй байна
+          </h2>
+          <p class="text-xs text-mwa-text-secondary mt-1 leading-relaxed">
+            Профайл, гишүүнчлэл, хадгалсан мэдээ зэргийг харахын тулд
+            <br />
+            нэвтрэнэ үү
+          </p>
+        </div>
+
+        <div class="space-y-2.5">
+          <a
+            href="/profile/login?next=/profile"
+            class="block text-center bg-mwa-burgundy text-white font-bold rounded-2xl py-3.5 text-sm active:opacity-80 shadow-sm"
           >
-            <path
-              d="M9 5l7 7-7 7"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-            />
-          </svg>
-        </a>
+            Нэвтрэх
+          </a>
+          <a
+            href="/profile/register?next=/profile"
+            class="block text-center bg-white border-2 border-mwa-burgundy text-mwa-burgundy font-bold rounded-2xl py-3.5 text-sm active:bg-mwa-burgundy/5"
+          >
+            Бүртгүүлэх
+          </a>
+        </div>
+
+        <div class="mt-8 pt-6 border-t border-gray-100">
+          <h3 class="text-xs font-bold text-mwa-text-secondary uppercase tracking-wider mb-3 text-center">
+            Гишүүн болсноор
+          </h3>
+          <ul class="space-y-2 text-sm text-mwa-text-primary">
+            {[
+              "Бүх мэдээ, хөтөлбөрт хандалт",
+              "Үйл ажиллагаанд бүртгүүлэх",
+              "Админтай шууд чатлах",
+              "Шинэ мэдээг анхдагч имэйлээр хүлээн авах",
+            ].map((b) => (
+              <li class="flex items-start gap-2">
+                <svg
+                  class="w-4 h-4 shrink-0 mt-0.5 text-mwa-burgundy"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fill-rule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    clip-rule="evenodd"
+                  />
+                </svg>
+                <span>{b}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
       </section>
     )
   }
-
-  <section class="px-5 mt-3 mb-10" data-purpose="profile-logout">
-    {
-      user ? (
-        <form method="POST" action="/api/auth/logout">
-          <button
-            type="submit"
-            class="w-full flex items-center gap-3 py-4 active:bg-gray-50 text-left"
-          >
-            <svg
-              class="w-5 h-5 text-mwa-text-secondary"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-              />
-            </svg>
-            <span class="text-sm text-mwa-text-primary">Гарах</span>
-          </button>
-        </form>
-      ) : (
-        <a
-          href="/profile/login?next=/profile"
-          class="w-full flex items-center gap-3 py-4 active:bg-gray-50"
-        >
-          <svg
-            class="w-5 h-5 text-mwa-text-secondary"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              d="M11 16l-4-4m0 0l4-4m-4 4h14m-6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-            />
-          </svg>
-          <span class="text-sm text-mwa-text-primary">Нэвтрэх</span>
-        </a>
-      )
-    }
-  </section>
 </AppLayout>
