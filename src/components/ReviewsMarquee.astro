@@ -1,0 +1,218 @@
+---
+// Auto-scrolling testimonial marquee. Reviews are hardcoded for now;
+// a later iteration can swap in DB-backed user-submitted reviews.
+
+export interface Review {
+  name: string;
+  role: string;
+  initials: string;
+  body: string;
+  tone?: "burgundy" | "amber" | "rose" | "sky" | "violet" | "emerald";
+}
+
+interface Props {
+  reviews?: Review[];
+  /** Marquee duration in seconds — bigger = slower. */
+  durationSec?: number;
+  /** Optional section heading shown above the marquee. */
+  heading?: string;
+  subheading?: string;
+}
+
+const DEFAULT_REVIEWS: Review[] = [
+  {
+    name: "Б. Оюунгэрэл",
+    role: "Гишүүн · 2 жил",
+    initials: "БО",
+    body: "БНСУ-д шинээр ирсэн надад үнэхээр их тус болсон. Удирдлагууд, гишүүд маань халуун дотноор хүлээн авч, олон асуудалд маань зөвлөж тусалсан.",
+    tone: "burgundy",
+  },
+  {
+    name: "Ц. Болормаа",
+    role: "Идэвхтэн · 3 жил",
+    initials: "ЦБ",
+    body: "Хүүхдийн өдөрлөг, эрх зүйн зөвлөгөө гэх мэт арга хэмжээнд оролцож, олон шинэ найз нөхдийг таньж мэдэв. Үнэхээр гэр бүл шиг.",
+    tone: "amber",
+  },
+  {
+    name: "Д. Энхтуяа",
+    role: "Гишүүн · 1 жил",
+    initials: "ДЭ",
+    body: "Сар бүр зохиогддог уулзалт, сургалтуудаас маш их юм олж авч байна. Манай Зөвлөл нь монгол эмэгтэйчүүдийн жинхэнэ гэр бүл.",
+    tone: "rose",
+  },
+  {
+    name: "А. Цэцэгмаа",
+    role: "Шинэ гишүүн",
+    initials: "АЦ",
+    body: "Гэр бүлийн зөвлөгөө авах боломж нээлттэй байгаа нь маш сайхан. Хүүхэддээ хэрэгтэй контент, сургалтуудыг олж авлаа.",
+    tone: "sky",
+  },
+  {
+    name: "Н. Сарантуяа",
+    role: "Гишүүн · 4 жил",
+    initials: "НС",
+    body: "Сайн дурын ажилд оролцох болсон цагаас хойш миний амьдрал илүү утгатай болсон. Энэ хамт олонд би үнэхээр баярладаг.",
+    tone: "violet",
+  },
+  {
+    name: "Б. Уранчимэг",
+    role: "Гишүүн · 5 жил",
+    initials: "БУ",
+    body: "БНСУ-д амьдарч буй монгол эмэгтэйчүүдийн дуу хоолой энэ зөвлөл байсаар л өсч хүчирхэгжсэн. Бахархал санагдаж байна.",
+    tone: "emerald",
+  },
+];
+
+const {
+  reviews = DEFAULT_REVIEWS,
+  durationSec = 45,
+  heading,
+  subheading,
+} = Astro.props;
+
+// Duplicate the list once so the CSS marquee can loop seamlessly:
+// when the first copy fully scrolls off-screen, the second is already
+// in position to take over without a visible jump.
+const loop = [...reviews, ...reviews];
+
+const toneStyles: Record<NonNullable<Review["tone"]>, { avatar: string; accent: string }> = {
+  burgundy: { avatar: "bg-mwa-burgundy text-white", accent: "text-mwa-burgundy" },
+  amber: { avatar: "bg-amber-500 text-white", accent: "text-amber-600" },
+  rose: { avatar: "bg-rose-500 text-white", accent: "text-rose-600" },
+  sky: { avatar: "bg-sky-500 text-white", accent: "text-sky-600" },
+  violet: { avatar: "bg-violet-500 text-white", accent: "text-violet-600" },
+  emerald: { avatar: "bg-emerald-500 text-white", accent: "text-emerald-600" },
+};
+---
+
+<section
+  class="reviews-marquee my-8 lg:my-0"
+  data-purpose="reviews-marquee"
+  style={`--marquee-duration:${durationSec}s`}
+>
+  {/* ---- Mobile heading ---- */}
+  <div class="px-5 mb-4 lg:hidden">
+    <h2 class="font-bold text-base">
+      {heading ?? "Гишүүдийн сэтгэгдэл"}
+    </h2>
+    {subheading && (
+      <p class="text-xs text-gray-500 mt-0.5">{subheading}</p>
+    )}
+  </div>
+
+  {/* ---- Desktop section header (editorial style) ---- */}
+  <div class="hidden lg:block px-12 pb-6">
+    <div class="border-t border-mwa-ink/90 pt-6 flex items-end justify-between">
+      <div>
+        <span class="ed-label">Гишүүдийн сэтгэгдэл · Testimonials</span>
+        <h2 class="text-3xl xl:text-4xl font-extrabold leading-tight tracking-tight text-mwa-ink mt-4">
+          {heading ?? "Бидний хамт олон юу гэж хэлдэг вэ"}
+        </h2>
+      </div>
+      <a
+        href="/profile/register"
+        class="text-[12px] font-bold text-mwa-burgundy hover:underline shrink-0"
+      >
+        Сэтгэгдэл бичих ›
+      </a>
+    </div>
+  </div>
+
+  {/* ---- The marquee itself ---- */}
+  <div
+    class="marquee-viewport relative overflow-hidden lg:px-12"
+    aria-label="Гишүүдийн сэтгэгдэл"
+  >
+    {/* Soft edge fade (desktop) so cards drift in/out smoothly */}
+    <div
+      class="hidden lg:block absolute left-12 top-0 bottom-0 w-16 bg-gradient-to-r from-mwa-cream to-transparent pointer-events-none z-10"
+    >
+    </div>
+    <div
+      class="hidden lg:block absolute right-12 top-0 bottom-0 w-16 bg-gradient-to-l from-mwa-cream to-transparent pointer-events-none z-10"
+    >
+    </div>
+
+    <ul class="marquee-track flex gap-4 lg:gap-5 py-2">
+      {
+        loop.map((r, i) => {
+          const tone = toneStyles[r.tone ?? "burgundy"];
+          return (
+            <li
+              class="marquee-card shrink-0 w-72 lg:w-[360px] bg-white border border-gray-100 lg:border-mwa-ink/15 rounded-2xl lg:rounded-none p-5 shadow-sm lg:shadow-none flex flex-col"
+              aria-hidden={i >= reviews.length ? "true" : undefined}
+            >
+              <svg
+                class={`w-7 h-7 ${tone.accent} opacity-30 mb-2`}
+                fill="currentColor"
+                viewBox="0 0 32 32"
+                aria-hidden="true"
+              >
+                <path d="M9.352 4C4.456 7.456 1 13.12 1 19.36 1 24.832 4.32 28 8.704 28c4.16 0 7.232-3.36 7.232-7.36 0-3.84-2.624-6.72-6.144-6.72-.704 0-1.6.128-1.792.192.448-3.072 3.392-6.72 6.336-8.512L9.352 4zm17.024 0c-4.832 3.456-8.288 9.12-8.288 15.36 0 5.472 3.32 8.64 7.704 8.64 4.096 0 7.232-3.36 7.232-7.36 0-3.84-2.688-6.72-6.208-6.72-.704 0-1.536.128-1.728.192.448-3.072 3.328-6.72 6.272-8.512L26.376 4z" />
+              </svg>
+              <p class="text-[14px] lg:text-[15px] leading-relaxed text-mwa-text-primary lg:text-mwa-ink/85 flex-1">
+                {r.body}
+              </p>
+              <div class="flex items-center gap-3 mt-4 pt-4 border-t border-gray-100 lg:border-mwa-ink/10">
+                <div
+                  class={`w-10 h-10 rounded-full ${tone.avatar} flex items-center justify-center font-extrabold text-sm shrink-0`}
+                >
+                  {r.initials}
+                </div>
+                <div class="min-w-0">
+                  <div class="font-bold text-sm leading-tight">{r.name}</div>
+                  <div class="text-[11px] text-gray-500 lg:text-mwa-ink/55 mt-0.5">
+                    {r.role}
+                  </div>
+                </div>
+              </div>
+            </li>
+          );
+        })
+      }
+    </ul>
+  </div>
+</section>
+
+<style>
+  /* CSS-only marquee. Duplicated content + translate -50% so the
+     first half exits exactly as the second half slides in. */
+  .marquee-track {
+    animation: mwa-marquee var(--marquee-duration, 45s) linear infinite;
+    width: max-content;
+    will-change: transform;
+  }
+  .marquee-viewport {
+    padding-inline: 1.25rem; /* px-5 on mobile */
+  }
+  @media (min-width: 1024px) {
+    .marquee-viewport {
+      padding-inline: 3rem; /* px-12 on desktop, matches lg:px-12 wrapper */
+    }
+  }
+  .marquee-viewport:hover .marquee-track,
+  .marquee-viewport:focus-within .marquee-track {
+    animation-play-state: paused;
+  }
+  @keyframes mwa-marquee {
+    from {
+      transform: translateX(0);
+    }
+    to {
+      transform: translateX(-50%);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .marquee-track {
+      animation: none;
+    }
+    .marquee-viewport {
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+    }
+    .marquee-card {
+      scroll-snap-align: start;
+    }
+  }
+</style>

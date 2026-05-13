@@ -3,6 +3,7 @@ import AppLayout from "../layouts/AppLayout.astro";
 import HeroBanner from "../components/HeroBanner.astro";
 import HeroCarousel from "../components/HeroCarousel.astro";
 import NewsCarousel from "../components/NewsCarousel.astro";
+import ReviewsMarquee from "../components/ReviewsMarquee.astro";
 import SectionTitle from "../components/SectionTitle.astro";
 import GridCard from "../components/GridCard.astro";
 import { listNews, listHeroSlides, listEvents } from "../lib/db";
@@ -114,6 +115,8 @@ function leadParagraph(body: string): string {
     </section>
 
     <NewsCarousel items={latestNews} />
+
+    <ReviewsMarquee />
 
     <HeroBanner
       variant="secondary"
@@ -362,6 +365,11 @@ function leadParagraph(body: string): string {
         </div>
       </section>
     )}
+
+    {/* ---- Reviews marquee ---- */}
+    <section class="py-16 bg-mwa-cream">
+      <ReviewsMarquee />
+    </section>
 
     {/* ---- Membership CTA banner ---- */}
     <section class="px-12 pb-16">
